@@ -1,5 +1,7 @@
 # bloodio
 
+**Live demo:** https://simones99.github.io/bloodio/ (runs entirely in your browser; nothing is uploaded)
+
 A local-first web app for keeping track of your own blood test results. It reads the PDF reports that Italian labs send, turns them into structured measurements, asks you to check every value before anything is stored, and charts each value over time against the reference range printed on the report.
 
 Everything runs in the browser. There is no backend, no account and no telemetry: reports and values stay in the device's IndexedDB and leave it only when the user exports them.
