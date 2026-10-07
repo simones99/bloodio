@@ -1,0 +1,13 @@
+#!/bin/sh
+# Blocks real lab reports and document binaries from being committed (see README, Privacy).
+# docs/screenshots/ is allowed: those images are captured from the synthetic test fixtures only.
+blocked=$(git -c core.quotePath=false diff --cached --name-only --diff-filter=ACMR |
+  grep -E -i '^examples/|\.(pdf|png|jpe?g|heic|heif|tiff?)$' |
+  grep -v -E '^examples/README\.md$|^public/|^tests/fixtures/synthetic/|^docs/screenshots/')
+
+if [ -n "$blocked" ]; then
+  echo "Commit blocked: these files may contain real lab reports or personal data:" >&2
+  echo "$blocked" >&2
+  echo "Only anonymized JSON fixtures belong in the repository." >&2
+  exit 1
+fi

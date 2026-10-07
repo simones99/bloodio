@@ -1,0 +1,62 @@
+.search {
+  padding: 16px var(--gutter) 4px;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* same anatomy as a row of the report detail, as a link to the entry's page */
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  column-gap: 12px;
+  row-gap: 6px;
+  padding: 14px var(--gutter);
+  border-top: 1px solid var(--filetto);
+  color: inherit;
+  text-decoration: none;
+}
+
+.name {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.value {
+  font-size: 17px;
+  font-weight: 600;
+  text-align: right;
+  font-stretch: var(--dense-stretch);
+  font-variant-numeric: tabular-nums;
+}
+
+.value small {
+  margin-left: 4px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--cenere);
+}
+
+.rail {
+  grid-column: 1 / -1;
+}
+
+.meta {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 18px;
+  font-size: 13px;
+  color: var(--cenere);
+  font-stretch: var(--dense-stretch);
+}
+
+.date {
+  margin-left: auto;
+  text-align: right;
+}

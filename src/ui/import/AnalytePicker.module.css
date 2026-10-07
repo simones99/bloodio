@@ -1,0 +1,63 @@
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  max-width: 560px;
+  margin: 0 auto;
+  background: var(--nero);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(16px + env(safe-area-inset-top)) var(--gutter) 0;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 650;
+}
+
+.search {
+  padding: 12px var(--gutter) 16px;
+}
+
+.results {
+  flex: 1;
+  overflow-y: auto;
+  list-style: none;
+  padding: 0 0 24px;
+}
+
+.option,
+.create {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 12px var(--gutter);
+  border-top: 1px solid var(--filetto);
+  text-align: left;
+  font-size: 16px;
+}
+
+.option small {
+  color: var(--cenere);
+  font-size: 13px;
+  text-align: right;
+}
+
+.create {
+  color: var(--siero);
+  font-weight: 600;
+}
+
+.none {
+  padding: 16px var(--gutter);
+  color: var(--cenere);
+}

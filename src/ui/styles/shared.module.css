@@ -1,0 +1,180 @@
+/* Pieces shared by every page. Alignment is always left; numbers go right. */
+.pageHead {
+  padding: calc(40px + env(safe-area-inset-top)) var(--gutter) 0;
+}
+
+.pageTitle {
+  font-size: 34px;
+}
+
+.lead {
+  margin-top: 10px;
+  color: var(--cenere);
+  font-size: 15px;
+  max-width: 34em;
+}
+
+.sectionTitle {
+  padding: 28px var(--gutter) 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--cenere);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 16px var(--gutter) 0;
+}
+
+.chip {
+  min-height: var(--tap);
+  padding: 9px 16px;
+  border: 1px solid var(--filetto);
+  border-radius: var(--radius-pill);
+  font-size: 14px;
+}
+
+.chip[aria-pressed='true'] {
+  background: var(--testo);
+  border-color: var(--testo);
+  color: var(--nero);
+}
+
+.primary {
+  min-height: 52px;
+  padding: 0 24px;
+  border-radius: var(--radius-pill);
+  background: var(--arterioso);
+  color: #fff;
+  font-size: 17px;
+  font-weight: 650;
+}
+
+.primary:active {
+  background: var(--venoso);
+}
+
+.primary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.secondary {
+  min-height: 48px;
+  padding: 0 20px;
+  border: 1px solid var(--filetto);
+  border-radius: var(--radius-pill);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.textButton {
+  min-height: var(--tap);
+  padding: 0 4px;
+  font-size: 15px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--binario);
+}
+
+.empty {
+  padding: 32px var(--gutter);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+  font-size: 17px;
+  max-width: 30em;
+}
+
+.alert {
+  margin: 20px var(--gutter) 0;
+  padding: 14px 16px;
+  border-left: 3px solid var(--arterioso);
+  background: var(--grafite);
+  font-size: 15px;
+}
+
+.toast {
+  position: sticky;
+  top: calc(12px + env(safe-area-inset-top));
+  z-index: 5;
+  width: fit-content;
+  margin: 12px auto -52px;
+  padding: 10px 18px;
+  border-radius: var(--radius-pill);
+  background: var(--testo);
+  color: var(--nero);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.field label,
+.fieldLabel {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 13px;
+  color: var(--cenere);
+}
+
+.input {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-field);
+  background: var(--grafite);
+  font-size: 16px;
+}
+
+.input:focus-visible {
+  outline-offset: 0;
+}
+
+.input[aria-invalid='true'] {
+  border-color: var(--arterioso);
+}
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: var(--tap);
+  margin-left: -6px;
+  color: var(--cenere);
+  font-size: 15px;
+  text-decoration: none;
+}
+
+.backLink svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* native select, dressed like the other fields */
+select.input {
+  appearance: none;
+  padding-right: 36px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--cenere) 50%),
+    linear-gradient(135deg, var(--cenere) 50%, transparent 50%);
+  background-position:
+    calc(100% - 20px) 50%,
+    calc(100% - 14px) 50%;
+  background-size:
+    6px 6px,
+    6px 6px;
+  background-repeat: no-repeat;
+}
+
+input[type='date'].input {
+  appearance: none;
+  display: block;
+}

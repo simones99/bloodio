@@ -1,0 +1,43 @@
+.page {
+  min-height: 100svh;
+  max-width: 560px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.slab {
+  background: var(--arterioso);
+  color: #000;
+  padding: calc(40px + env(safe-area-inset-top)) var(--gutter) 28px;
+}
+
+.brand {
+  font-size: 18px;
+}
+
+.title {
+  font-size: 44px;
+  margin-top: 56px;
+}
+
+.body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 28px var(--gutter) calc(24px + env(safe-area-inset-bottom));
+  font-size: 17px;
+  line-height: 1.45;
+  max-width: 34em;
+}
+
+.accept {
+  margin-top: auto;
+  min-height: 52px;
+  border-radius: var(--radius-pill);
+  background: var(--testo);
+  color: var(--nero);
+  font-size: 17px;
+  font-weight: 650;
+}

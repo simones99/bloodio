@@ -1,0 +1,33 @@
+# Real lab reports and any personal data: NEVER commit (see README, Privacy)
+examples/*
+!examples/README.md
+pii.local.json
+
+# Dependencies and build output
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+
+# OS and editor
+.DS_Store
+.calva/
+.clj-kondo/
+.lsp/
+.vscode/
+.idea/
+*.log
+
+# Local Claude Code scratch area
+claude-code-playground/
+
+# AI assistant instructions, session notes and implementation plans (kept locally, not published)
+CLAUDE.md
+AGENTS.md
+.claude/
+.superpowers/
+docs/superpowers/
+docs/PROMPT-WEB.md
+docs/PROMPT-IOS.md
+docs/NEXT-STEPS.md

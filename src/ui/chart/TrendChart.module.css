@@ -1,0 +1,136 @@
+/* Colors come only from theme variables: Nero and Carta need no redraw. */
+.chart {
+  position: relative;
+  width: 100%;
+}
+
+.chart svg {
+  display: block;
+  overflow: visible;
+}
+
+.band {
+  fill: var(--grafite);
+}
+
+.edge {
+  fill: none;
+  stroke: var(--binario);
+  stroke-width: 1;
+}
+
+.grid {
+  stroke: var(--filetto);
+  stroke-width: 1;
+}
+
+.axis {
+  fill: var(--cenere);
+  font-size: 11px;
+  font-stretch: var(--dense-stretch);
+  font-variant-numeric: tabular-nums;
+}
+
+.line {
+  fill: none;
+  stroke: var(--cenere);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+/* the surface-colored ring that keeps a mark legible where it crosses the line */
+.halo {
+  fill: var(--nero);
+}
+
+.in {
+  fill: var(--testo);
+}
+
+.open {
+  fill: var(--nero);
+  stroke: var(--testo);
+  stroke-width: 1.5;
+}
+
+.out {
+  fill: var(--arterioso);
+}
+
+.latest {
+  fill: none;
+  stroke: var(--testo);
+  stroke-width: 1.5;
+}
+
+/* transparent hit areas over the marks: 32px, larger than any mark */
+.hits {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hit {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  margin: -16px 0 0 -16px;
+  border-radius: 50%;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.hit:focus-visible {
+  outline: 2px solid var(--testo);
+  outline-offset: -5px;
+}
+
+.callout {
+  --tx: -50%;
+  --ty: -100%;
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: max-content;
+  max-width: 180px;
+  padding: 10px 12px;
+  border-radius: var(--radius-field);
+  background: var(--grafite);
+  border: 1px solid var(--filetto);
+  font-size: 13px;
+  color: var(--cenere);
+  transform: translate(var(--tx), var(--ty));
+}
+
+.callout[data-align='start'] {
+  --tx: -16px;
+}
+
+.callout[data-align='end'] {
+  --tx: calc(-100% + 16px);
+}
+
+.callout[data-side='below'] {
+  --ty: 0;
+}
+
+.callout strong {
+  font-size: 17px;
+  font-weight: 650;
+  color: var(--testo);
+  font-variant-numeric: tabular-nums;
+}
+
+.callout a {
+  margin-top: 6px;
+  min-height: 32px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--testo);
+  text-decoration: underline;
+  text-decoration-color: var(--binario);
+  text-underline-offset: 4px;
+}

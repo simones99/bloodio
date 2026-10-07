@@ -1,0 +1,102 @@
+{
+  "app": "bloodio",
+  "version": 1,
+  "exportedAt": "2022-11-05T09:15:00.000Z",
+  "appVersion": "0.1.0",
+  "data": {
+    "profiles": [{ "id": "default", "name": "Profilo", "createdAt": "2022-11-05T08:00:00.000Z" }],
+    "reports": [
+      {
+        "id": "r-2021-07-10",
+        "profileId": "default",
+        "sampleDate": "2021-07-10",
+        "lab": "PROAVIS",
+        "type": "sangue",
+        "source": "parser",
+        "adapterId": "proavis",
+        "notes": "",
+        "fileHash": null,
+        "createdAt": "2022-11-05T08:01:00.000Z",
+        "updatedAt": "2022-11-05T08:01:00.000Z"
+      },
+      {
+        "id": "r-2021-10-04",
+        "profileId": "default",
+        "sampleDate": "2021-10-04",
+        "lab": "PROAVIS",
+        "type": "misto",
+        "source": "parser",
+        "adapterId": "proavis",
+        "notes": "",
+        "fileHash": "hash-1",
+        "createdAt": "2022-11-05T08:02:00.000Z",
+        "updatedAt": "2022-11-05T08:02:00.000Z"
+      }
+    ],
+    "measurements": [
+      {
+        "id": "m-1",
+        "reportId": "r-2021-07-10",
+        "analyteId": "tsh",
+        "customAnalyteId": null,
+        "value": 5.48,
+        "comparator": null,
+        "valueText": "5,48",
+        "unit": "µUI/mL",
+        "refMin": 0.27,
+        "refMax": 4.2,
+        "refText": "da 0,27 a 4,20",
+        "outOfRange": true,
+        "confidence": 1,
+        "section": "MONITORAGGIO TIROIDE",
+        "order": 0
+      },
+      {
+        "id": "m-2",
+        "reportId": "r-2021-10-04",
+        "analyteId": "tsh",
+        "customAnalyteId": null,
+        "value": 5.31,
+        "comparator": null,
+        "valueText": "5,31",
+        "unit": "µUI/mL",
+        "refMin": 0.27,
+        "refMax": 4.2,
+        "refText": "da 0,27 a 4,20",
+        "outOfRange": true,
+        "confidence": 1,
+        "section": "MONITORAGGIO TIROIDE",
+        "order": 0
+      },
+      {
+        "id": "m-3",
+        "reportId": "r-2021-10-04",
+        "analyteId": null,
+        "customAnalyteId": "c-1",
+        "value": null,
+        "comparator": null,
+        "valueText": "Rari",
+        "unit": null,
+        "refMin": null,
+        "refMax": null,
+        "refText": null,
+        "outOfRange": null,
+        "confidence": 1,
+        "section": "ESAME DEL SEDIMENTO",
+        "order": 1
+      }
+    ],
+    "customAnalytes": [
+      {
+        "id": "c-1",
+        "name": "Cristalli rari",
+        "unit": null,
+        "category": "urine",
+        "specimen": "urine",
+        "kind": "qualitative"
+      }
+    ],
+    "preferredUnits": { "glucose": "mmol/L" },
+    "attachments": []
+  }
+}

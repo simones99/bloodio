@@ -1,0 +1,67 @@
+.frame {
+  display: flex;
+  flex-direction: column;
+  height: 100svh;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.main {
+  flex: 1;
+  overflow-y: auto;
+  outline: none;
+  padding-bottom: 24px;
+}
+
+/* Referti, +, Valori, Impostazioni. Home will make it five, with "+" in the middle. */
+.tabs {
+  display: grid;
+  grid-template-columns: 1fr 72px 1fr 1fr;
+  align-items: center;
+  padding: 8px 8px calc(10px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--filetto);
+  background: var(--nero);
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: var(--tap);
+  font-size: 11px;
+  color: var(--cenere);
+  text-decoration: none;
+}
+
+.tab[aria-current='page'] {
+  color: var(--testo);
+}
+
+.tabs svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.add {
+  justify-self: center;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--testo);
+  color: var(--nero);
+}
+
+.add svg {
+  width: 24px;
+  height: 24px;
+  stroke-width: 2.2;
+}

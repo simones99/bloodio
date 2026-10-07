@@ -1,0 +1,66 @@
+/* Bloodio design tokens. Identity theme "nero"; "carta" is for bright light and printed exports. */
+@font-face {
+  font-family: 'Archivo Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  src: url('@fontsource-variable/archivo/files/archivo-latin-standard-normal.woff2')
+    format('woff2-variations');
+}
+
+:root {
+  --nero: #000000;
+  --grafite: #1c1c1c;
+  --filetto: #2a2a2a;
+  --binario: #3a3a3a;
+  --testo: #ffffff;
+  --cenere: #8f8f8f;
+  --arterioso: #e8151f;
+  --arterioso-testo: #ff5a5f;
+  --venoso: #5a0a12;
+  --siero: #e8b04a;
+  --su-siero: #000000;
+  --punto: #ffffff;
+
+  --font: 'Archivo Variable', 'Helvetica Neue', Arial, sans-serif;
+  /* Display: expanded and heavy. Dense data: slightly condensed. */
+  --display-stretch: 125%;
+  --display-weight: 800;
+  --display-tracking: -0.035em;
+  --dense-stretch: 88%;
+
+  --gutter: 20px;
+  --radius-field: 8px;
+  --radius-sheet: 20px;
+  --radius-pill: 999px;
+  --tap: 44px;
+}
+
+:root[data-theme='carta'] {
+  --nero: #ffffff;
+  --grafite: #f1f1f1;
+  --filetto: #dcdcdc;
+  --binario: #c4c4c4;
+  --testo: #000000;
+  --cenere: #5c5c5c;
+  --arterioso-testo: #c40f18;
+  --siero: #8a5a00;
+  --su-siero: #ffffff;
+  --punto: #000000;
+}
+
+@media (prefers-color-scheme: light) {
+  :root[data-theme='auto'] {
+    --nero: #ffffff;
+    --grafite: #f1f1f1;
+    --filetto: #dcdcdc;
+    --binario: #c4c4c4;
+    --testo: #000000;
+    --cenere: #5c5c5c;
+    --arterioso-testo: #c40f18;
+    --siero: #8a5a00;
+    --su-siero: #ffffff;
+    --punto: #000000;
+  }
+}

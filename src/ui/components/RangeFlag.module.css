@@ -1,0 +1,23 @@
+.out,
+.muted {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.out {
+  color: var(--arterioso-testo);
+}
+
+.out svg {
+  width: 9px;
+  height: 9px;
+  fill: currentColor;
+}
+
+.muted {
+  color: var(--cenere);
+  font-weight: 400;
+}

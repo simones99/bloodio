@@ -1,0 +1,151 @@
+.category {
+  margin-top: 8px;
+  font-size: 15px;
+  color: var(--cenere);
+}
+
+.name {
+  margin-top: 2px;
+  font-size: 22px;
+  font-weight: 650;
+}
+
+/* the one big number of the page: proportional figures, they read tighter at this size */
+.big {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 10px;
+  font-size: 72px;
+  font-variant-numeric: proportional-nums;
+  overflow-wrap: anywhere;
+}
+
+/* long figures (millions) shrink with the viewport instead of breaking mid-number */
+.bigLong {
+  font-size: min(72px, 13vw);
+}
+
+.big small {
+  font-size: 17px;
+  font-weight: 400;
+  font-stretch: 100%;
+  letter-spacing: 0;
+  color: var(--cenere);
+}
+
+.when {
+  margin-top: 12px;
+  font-size: 15px;
+  color: var(--cenere);
+}
+
+.flag {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 15px;
+}
+
+.printed {
+  color: var(--cenere);
+}
+
+.rail {
+  margin-top: 14px;
+}
+
+.chart {
+  padding: 24px calc(var(--gutter) - 8px) 0 calc(var(--gutter) - 16px);
+}
+
+.note {
+  padding: 12px var(--gutter) 0;
+  max-width: 34em;
+  font-size: 14px;
+  color: var(--cenere);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-stretch: var(--dense-stretch);
+}
+
+.table th {
+  padding: 8px 8px 8px 0;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--cenere);
+}
+
+.table td {
+  padding: 13px 8px 13px 0;
+  border-top: 1px solid var(--filetto);
+  font-size: 15px;
+  vertical-align: baseline;
+}
+
+.table th:first-child,
+.table td:first-child {
+  padding-left: var(--gutter);
+}
+
+.table th:last-child,
+.table td:last-child {
+  padding-right: var(--gutter);
+  text-align: right;
+  color: var(--cenere);
+}
+
+.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.table th.num {
+  text-align: right;
+}
+
+.num small {
+  margin-left: 4px;
+  font-size: 12px;
+  color: var(--cenere);
+}
+
+.date a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--binario);
+  text-underline-offset: 4px;
+  white-space: nowrap;
+}
+
+.mark {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 8px;
+  border-radius: 1.5px;
+  background: var(--arterioso);
+  transform: rotate(45deg) translateY(-1px);
+}
+
+.units {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* the export sits apart from the unit choice, at the end of the row */
+.saveImage {
+  margin-left: auto;
+}
+
+.saveImage[aria-disabled='true'] {
+  opacity: 0.5;
+}

@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bloodio mockup</title>
+<!-- THROWAWAY MOCKUP (2026-09-17): visual reference approved during brainstorming. Not application code.
+     Do not import from it. Fonts resolve from the project's node_modules once @fontsource-variable/archivo is installed. -->
+<style>
+@font-face {
+  font-family: 'Archivo Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  src: url(../../node_modules/@fontsource-variable/archivo/files/archivo-latin-standard-normal.woff2) format('woff2-variations');
+}
+
+
+:root {
+  --nero: #000000;
+  --grafite: #1c1c1c;
+  --filetto: #2a2a2a;
+  --binario: #3a3a3a;
+  --testo: #ffffff;
+  --cenere: #8f8f8f;
+  --arterioso: #e8151f;
+  --arterioso-testo: #ff5a5f;
+  --venoso: #5a0a12;
+  --siero: #e8b04a;
+  --punto: #ffffff;
+  --display: 'Archivo Variable', 'Helvetica Neue', Arial, sans-serif;
+  --d-weight: 800; --d-stretch: 125%; --d-track: -0.035em; --d-scale: 0.8; --d-lh: 1;
+  --ui: 'Archivo Variable', 'Helvetica Neue', Arial, sans-serif;
+}
+:root[data-theme="carta"] {
+  --nero: #ffffff;
+  --grafite: #f1f1f1;
+  --filetto: #dcdcdc;
+  --binario: #c4c4c4;
+  --testo: #000000;
+  --cenere: #5c5c5c;
+  --arterioso-testo: #c40f18;
+  --siero: #8a5a00;
+  --punto: #000000;
+}
+
+
+.d { font-family: var(--display); font-weight: var(--d-weight); font-stretch: var(--d-stretch); letter-spacing: var(--d-track); }
+
+* { box-sizing: border-box; margin: 0; }
+html { background: var(--nero); }
+body {
+  font-family: var(--ui);
+  font-size: 16px;
+  line-height: 1.4;
+  color: var(--testo);
+  background: var(--nero);
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+:focus-visible { outline: 2px solid var(--testo); outline-offset: 3px; }
+
+/* ---------- presentation stage (not part of the app) ---------- */
+.stage-bar {
+  flex-wrap: wrap;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 20px 24px; border-bottom: 1px solid var(--filetto);
+}
+.stage-bar h1 { font-family: var(--display); font-weight: var(--d-weight); font-stretch: var(--d-stretch); letter-spacing: var(--d-track); font-size: calc(30px * var(--d-scale)); }
+.stage-bar p { color: var(--cenere); font-size: 14px; }
+.theme-switch { display: flex; border: 1px solid var(--filetto); border-radius: 999px; padding: 3px; }
+.theme-switch button { padding: 8px 16px; border-radius: 999px; font-size: 14px; min-height: 36px; }
+.theme-switch button[aria-pressed="true"] { background: var(--testo); color: var(--nero); }
+.stage {
+  display: flex; gap: 32px; padding: 32px 24px 64px; overflow-x: auto; align-items: flex-start;
+}
+.phone-wrap { flex: 0 0 390px; }
+.phone-wrap > h2 { font-size: 14px; font-weight: 500; color: var(--cenere); margin: 0 0 12px 8px; }
+.phone {
+  width: 390px; height: 844px; border: 1px solid var(--filetto); border-radius: 44px;
+  overflow: hidden; position: relative; background: var(--nero); display: flex; flex-direction: column;
+}
+.screen { flex: 1; overflow-y: auto; scrollbar-width: none; }
+.screen::-webkit-scrollbar { display: none; }
+
+@media (max-width: 480px) {
+  .stage { flex-direction: column; padding: 0; gap: 0; }
+  .phone-wrap { flex: none; width: 100%; }
+  .phone-wrap > h2 { margin: 24px 16px 8px; }
+  .phone { width: 100%; height: 100svh; border: 0; border-radius: 0; border-top: 1px solid var(--filetto); }
+}
+
+/* ---------- shared app pieces ---------- */
+.section-title { font-size: 15px; font-weight: 600; color: var(--cenere); padding: 28px 20px 8px; }
+
+/* The rail: the printed reference range as a line, the value as a point on it. */
+.rail { position: relative; height: 20px; width: 100%; }
+.rail::before {
+  content: ''; position: absolute; top: 7px; height: 6px; border-radius: 999px; background: var(--binario);
+  left: var(--from, 20%); right: calc(100% - var(--to, 80%));
+}
+.rail::after { content: ''; position: absolute; top: 9.5px; left: 0; right: 0; height: 1px; background: var(--filetto); z-index: 0; }
+.rail::before { z-index: 1; }
+.rail .dot { z-index: 2; }
+.rail .dot {
+  position: absolute; top: 4px; left: var(--x); width: 12px; height: 12px; margin-left: -6px;
+  border-radius: 50%; background: var(--punto); box-shadow: 0 0 0 3px var(--nero);
+}
+.rail .dot.out { background: var(--arterioso); border-radius: 2px; transform: rotate(45deg); width: 11px; height: 11px; top: 4.5px; }
+.rail .dot.watch { background: var(--siero); }
+.rail .dot.ghost { background: transparent; border: 2px solid var(--cenere); box-shadow: none; }
+
+/* one orchestrated moment: points travel along their rails */
+@media (prefers-reduced-motion: no-preference) {
+  .play .rail .dot { animation: travel 700ms cubic-bezier(.2,.7,.2,1) both; animation-delay: calc(var(--i, 0) * 70ms + 150ms); }
+  @keyframes travel { from { left: 20%; opacity: 0; } 30% { opacity: 1; } to { left: var(--x); opacity: 1; } }
+}
+
+.flag { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 500; color: var(--arterioso-testo); }
+.flag svg { width: 9px; height: 9px; fill: currentColor; }
+.flag.watch { color: var(--siero); }
+
+.row {
+  display: grid; grid-template-columns: 1fr auto; column-gap: 12px; row-gap: 6px;
+  padding: 14px 20px; border-top: 1px solid var(--filetto); align-items: baseline;
+}
+.row .name { font-size: 16px; font-weight: 500; }
+.row .val { font-size: 17px; font-weight: 600; text-align: right; font-stretch: 88%; }
+.row .val small { font-size: 13px; font-weight: 400; color: var(--cenere); margin-left: 3px; }
+.row .rail { grid-column: 1 / -1; }
+.row .meta { grid-column: 1 / -1; display: flex; justify-content: space-between; font-size: 13px; color: var(--cenere); font-stretch: 88%; }
+
+/* tab bar */
+.tabs {
+  display: grid; grid-template-columns: 1fr 1fr 64px 1fr 1fr; align-items: center;
+  border-top: 1px solid var(--filetto); padding: 8px 8px 22px; background: var(--nero);
+}
+.tabs a { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 11px; color: var(--cenere); text-decoration: none; min-height: 44px; justify-content: center; }
+.tabs a[aria-current] { color: var(--testo); }
+.tabs svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.tabs .add { width: 52px; height: 52px; border-radius: 50%; background: var(--testo); color: var(--nero); justify-self: center; display: grid; place-items: center; }
+.tabs .add svg { stroke-width: 2.2; }
+
+/* ---------- HOME ---------- */
+.slab { background: var(--arterioso); color: #000; padding: 64px 20px 28px; }
+.slab .brand { font-family: var(--display); font-weight: var(--d-weight); font-stretch: var(--d-stretch); letter-spacing: var(--d-track); font-size: calc(22px * var(--d-scale)); }
+.slab .date { font-family: var(--display); font-weight: var(--d-weight); font-stretch: var(--d-stretch); letter-spacing: var(--d-track); font-size: calc(60px * var(--d-scale)); line-height: var(--d-lh); margin-top: 44px; }
+.slab .lab { font-size: 16px; font-weight: 600; margin-top: 14px; }
+.slab .sum { font-size: 19px; line-height: 1.3; margin-top: 4px; max-width: 18em; font-weight: 450; }
+
+.report-row { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 20px; border-top: 1px solid var(--filetto); }
+.report-row .d { font-family: var(--display); font-weight: var(--d-weight); font-stretch: var(--d-stretch); letter-spacing: var(--d-track); font-size: calc(23px * var(--d-scale)); }
+.report-row .l { font-size: 14px; color: var(--cenere); }
+
+/* ---------- ANALITA ---------- */
+.topbar { display: flex; align-items: center; gap: 8px; padding: 58px 12px 0; }
+.topbar button { width: 44px; height: 44px; display: grid; place-items: center; }
+.topbar svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.topbar span { font-size: 15px; color: var(--cenere); }
+.analyte-head { padding: 8px 20px 0; }
+.analyte-head h3 { font-size: 20px; font-weight: 600; }
+.analyte-head .big { font-family: var(--display); font-weight: var(--d-weight); font-stretch: var(--d-stretch); letter-spacing: var(--d-track); font-size: calc(96px * var(--d-scale)); line-height: 1; margin-top: 10px; display: flex; align-items: baseline; gap: 10px; }
+.analyte-head .big small { font-family: var(--ui); font-size: 17px; font-weight: 400; font-stretch: 100%; color: var(--cenere); letter-spacing: 0; }
+.analyte-head .flag { font-size: 15px; margin-top: 10px; }
+.analyte-head .rail { margin-top: 14px; }
+.chart { padding: 20px 8px 0 4px; }
+.chart svg { width: 100%; height: auto; display: block; }
+.chart .band { fill: var(--grafite); }
+.chart .band-edge { stroke: var(--binario); stroke-width: 1; fill: none; }
+.chart .grid { stroke: var(--filetto); stroke-width: 1; }
+.chart .line { stroke: var(--cenere); stroke-width: 1.5; fill: none; }
+.chart text { font-family: var(--ui); font-size: 11px; fill: var(--cenere); font-stretch: 88%; }
+.chart .pt { fill: var(--arterioso); }
+.chart .pt-ring { fill: none; stroke: var(--testo); stroke-width: 1.5; }
+.chips { display: flex; gap: 8px; padding: 16px 20px 0; }
+.chip { border: 1px solid var(--filetto); border-radius: 999px; padding: 9px 16px; font-size: 14px; min-height: 40px; }
+.chip[aria-pressed="true"] { background: var(--testo); color: var(--nero); border-color: var(--testo); }
+table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+th { text-align: left; font-size: 13px; font-weight: 500; color: var(--cenere); padding: 8px 0; }
+td { padding: 13px 0; border-top: 1px solid var(--filetto); font-size: 15px; font-stretch: 88%; }
+th:first-child, td:first-child { padding-left: 20px; }
+th:last-child, td:last-child { padding-right: 20px; text-align: right; color: var(--cenere); }
+td.num, th.num { text-align: right; padding-right: 16px; }
+td.num { font-weight: 600; }
+td .mark { display: inline-block; width: 8px; height: 8px; background: var(--arterioso); transform: rotate(45deg); border-radius: 1.5px; margin-right: 8px; }
+
+/* ---------- VERIFICA ---------- */
+.verify-head { padding: 64px 20px 0; }
+.verify-head h3 { font-family: var(--display); font-weight: var(--d-weight); font-stretch: var(--d-stretch); letter-spacing: var(--d-track); font-size: calc(38px * var(--d-scale)); line-height: 1.05; }
+.verify-head p { color: var(--cenere); font-size: 15px; margin-top: 8px; }
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 20px 20px 0; }
+.field label { display: block; font-size: 13px; color: var(--cenere); margin-bottom: 5px; }
+.field .input { background: var(--grafite); border-radius: 8px; padding: 12px; font-size: 16px; min-height: 46px; border: 1px solid transparent; }
+.field.wide { grid-column: 1 / -1; }
+.vrow { padding: 16px 20px; border-top: 1px solid var(--filetto); position: relative; }
+.vrow.doubt::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--siero); }
+.vrow .top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.vrow .name { font-size: 16px; font-weight: 600; }
+.vrow .conf { font-size: 13px; color: var(--cenere); white-space: nowrap; }
+.vrow .grid3 { display: grid; grid-template-columns: 1.1fr 1fr 1.6fr; gap: 8px; margin-top: 10px; }
+.vrow .grid3 .input { background: var(--grafite); border-radius: 8px; padding: 10px 12px; font-size: 16px; font-stretch: 88%; }
+.vrow .grid3 .input.num { font-weight: 600; text-align: right; }
+.vrow .why { display: flex; gap: 8px; align-items: flex-start; color: var(--siero); font-size: 14px; margin-top: 12px; }
+.vrow .why svg { width: 16px; height: 16px; flex: none; margin-top: 2px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.vrow .choice { display: flex; gap: 8px; margin-top: 10px; }
+.vrow .choice button { border: 1px solid var(--siero); color: var(--siero); border-radius: 999px; padding: 9px 16px; font-size: 15px; font-weight: 600; min-height: 42px; }
+.vrow .choice button[aria-pressed="true"] { background: var(--siero); color: #000; }
+.vrow .rail { margin-top: 12px; }
+.savebar { border-top: 1px solid var(--filetto); padding: 12px 20px 26px; display: flex; gap: 12px; align-items: center; background: var(--nero); }
+.savebar .ghost { font-size: 15px; padding: 0 8px; min-height: 52px; color: var(--testo); text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--binario); }
+.savebar .primary { flex: 1; background: var(--arterioso); color: #fff; border-radius: 999px; min-height: 52px; font-size: 17px; font-weight: 650; }
+.savebar .primary:active { background: var(--venoso); }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="up" viewBox="0 0 10 10"><path d="M5 1 9.5 9h-9z"/></symbol>
+  <symbol id="down" viewBox="0 0 10 10"><path d="M5 9 .5 1h9z"/></symbol>
+</svg>
+
+<header class="stage-bar">
+  <div>
+    <h1>bloodio</h1>
+    <p>Mockup statico usa e getta. Tre schermate, dati sintetici (inventati, non di una persona reale).</p>
+  </div>
+  <div class="theme-switch" role="group" aria-label="Tema">
+    <button type="button" data-theme-btn="nero" aria-pressed="true">Nero</button>
+    <button type="button" data-theme-btn="carta" aria-pressed="false">Carta</button>
+  </div>
+</header>
+
+<main class="stage">
+
+  <!-- ===================== HOME ===================== -->
+  <section class="phone-wrap" aria-labelledby="t-home">
+    <h2 id="t-home">Home</h2>
+    <div class="phone">
+      <div class="screen play">
+        <div class="slab">
+          <div class="brand">bloodio</div>
+          <div class="date">20 agosto<br>2022</div>
+          <div class="lab">PROAVIS</div>
+          <p class="sum">11 valori fuori dal range stampato, 14 dentro.</p>
+        </div>
+
+        <h3 class="section-title">Fuori range</h3>
+        <div class="row">
+          <span class="name">TSH</span><span class="val">5,07<small>µUI/mL</small></span>
+          <div class="rail" style="--x:88.9%"><i class="dot out" style="--i:0"></i></div>
+          <div class="meta"><span class="flag"><svg><use href="#up"/></svg>sopra</span><span>da 0,27 a 4,20</span></div>
+        </div>
+        <div class="row">
+          <span class="name">Eosinofili</span><span class="val">7,8<small>%</small></span>
+          <div class="rail" style="--x:92%"><i class="dot out" style="--i:1"></i></div>
+          <div class="meta"><span class="flag"><svg><use href="#up"/></svg>sopra</span><span>&lt; 6</span></div>
+        </div>
+        <div class="row">
+          <span class="name">Eosinofili</span><span class="val">590<small>/µL</small></span>
+          <div class="rail" style="--x:87.3%"><i class="dot out" style="--i:2"></i></div>
+          <div class="meta"><span class="flag"><svg><use href="#up"/></svg>sopra</span><span>da 10 a 500</span></div>
+        </div>
+        <div class="row">
+          <span class="name">Globuli rossi</span><span class="val">4.220.000<small>/µL</small></span>
+          <div class="rail" style="--x:8.8%"><i class="dot out" style="--i:3"></i></div>
+          <div class="meta"><span class="flag"><svg><use href="#down"/></svg>sotto</span><span>da 4.500.000 a 5.500.000</span></div>
+        </div>
+
+        <h3 class="section-title">Da tenere d'occhio</h3>
+        <div class="row">
+          <span class="name">Linfociti</span><span class="val">43,1<small>%</small></span>
+          <div class="rail" style="--x:75.4%"><i class="dot watch" style="--i:4"></i></div>
+          <div class="meta"><span class="flag watch">vicino al limite, in salita</span><span>da 20 a 45</span></div>
+        </div>
+
+        <h3 class="section-title">Ultimi referti</h3>
+        <div class="report-row"><span class="d">20 ago 2022</span><span class="l">PROAVIS, 25 valori</span></div>
+        <div class="report-row"><span class="d">4 ott 2021</span><span class="l">PROAVIS, 49 valori</span></div>
+        <div class="report-row"><span class="d">30 ago 2021</span><span class="l">AST Vallerosa, 2 valori</span></div>
+        <div style="height:24px"></div>
+      </div>
+      <nav class="tabs" aria-label="Principale">
+        <a href="#" aria-current="page"><svg viewBox="0 0 24 24"><path d="M4 11 12 4l8 7v9H4z"/></svg>Home</a>
+        <a href="#"><svg viewBox="0 0 24 24"><path d="M7 3h10v18H7zM10 8h4M10 12h4M10 16h2"/></svg>Referti</a>
+        <button class="add" type="button" aria-label="Carica un referto"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 5v14M5 12h14"/></svg></button>
+        <a href="#"><svg viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"/><circle cx="16" cy="6" r="1.8" fill="currentColor"/><circle cx="8" cy="12" r="1.8" fill="currentColor"/><circle cx="13" cy="18" r="1.8" fill="currentColor"/></svg>Analiti</a>
+        <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>Impostazioni</a>
+      </nav>
+    </div>
+  </section>
+
+  <!-- ===================== ANALITA ===================== -->
+  <section class="phone-wrap" aria-labelledby="t-analita">
+    <h2 id="t-analita">Analita</h2>
+    <div class="phone">
+      <div class="screen">
+        <div class="topbar">
+          <button type="button" aria-label="Indietro"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+          <span>Tiroide</span>
+        </div>
+        <div class="analyte-head">
+          <h3>TSH</h3>
+          <div class="big">5,07<small>µUI/mL</small></div>
+          <div class="flag"><svg><use href="#up"/></svg>sopra il range stampato, da 0,27 a 4,20</div>
+          <div class="rail" style="--x:88.9%"><i class="dot out"></i></div>
+        </div>
+
+        <div class="chart" role="img" aria-label="TSH da marzo 2021 ad agosto 2022: cinque misure, tutte sopra il range stampato, in discesa da 5,96 a 5,07.">
+          <svg viewBox="0 0 350 200">
+            <!-- reference band, stepped per report (PROAVIS 0,27-4,20 / AST 0,25-4 / PROAVIS) -->
+            <path class="band" d="M36 91.3H131.6V95H151.1V91.3H340V164.9H151.1V165.3H131.6V164.9H36z"/>
+            <path class="band-edge" d="M36 91.3H131.6V95H151.1V91.3H340"/>
+            <path class="band-edge" d="M36 164.9H131.6V165.3H151.1V164.9H340"/>
+            <g class="grid"><path d="M36 170H340M36 132.5H340M36 57.5H340M36 20H340" opacity=".7"/></g>
+            <text x="28" y="174" text-anchor="end">0</text>
+            <text x="28" y="136" text-anchor="end">2</text>
+            <text x="28" y="99" text-anchor="end">4</text>
+            <text x="28" y="61" text-anchor="end">6</text>
+            <text x="28" y="24" text-anchor="end">8</text>
+            <text x="44" y="158">range stampato</text>
+            <path class="line" d="M36 58.3 103.1 67.3 131.6 62.8 151.1 70.4 330 74.9"/>
+            <g class="pt">
+              <rect x="-4.5" y="-4.5" width="9" height="9" rx="1.5" transform="translate(36 58.3) rotate(45)"/>
+              <rect x="-4.5" y="-4.5" width="9" height="9" rx="1.5" transform="translate(103.1 67.3) rotate(45)"/>
+              <rect x="-4.5" y="-4.5" width="9" height="9" rx="1.5" transform="translate(131.6 62.8) rotate(45)"/>
+              <rect x="-4.5" y="-4.5" width="9" height="9" rx="1.5" transform="translate(151.1 70.4) rotate(45)"/>
+              <rect x="-4.5" y="-4.5" width="9" height="9" rx="1.5" transform="translate(330 74.9) rotate(45)"/>
+            </g>
+            <rect class="pt-ring" x="-8" y="-8" width="16" height="16" rx="3" transform="translate(330 74.9) rotate(45)"/>
+            <text x="36" y="190" text-anchor="middle">mar 21</text>
+            <text x="103.1" y="190" text-anchor="middle">lug 21</text>
+            <text x="151.1" y="190" text-anchor="middle">ott 21</text>
+            <text x="326" y="190" text-anchor="middle">ago 22</text>
+          </svg>
+        </div>
+
+        <div class="chips">
+          <button class="chip" type="button" aria-pressed="true">µUI/mL</button>
+          <button class="chip" type="button" aria-pressed="false">mUI/L</button>
+          <button class="chip" type="button" style="margin-left:auto">Salva immagine</button>
+        </div>
+
+        <h3 class="section-title">Storico</h3>
+        <table>
+          <thead><tr><th>Data</th><th class="num">Valore</th><th>Range</th><th>Laboratorio</th></tr></thead>
+          <tbody>
+            <tr><td><i class="mark"></i>20 ago 2022</td><td class="num">5,07</td><td>0,27 – 4,20</td><td>PROAVIS</td></tr>
+            <tr><td><i class="mark"></i>4 ott 2021</td><td class="num">5,31</td><td>0,27 – 4,20</td><td>PROAVIS</td></tr>
+            <tr><td><i class="mark"></i>30 ago 2021</td><td class="num">5,72</td><td>0,25 – 4</td><td>AST Vallerosa</td></tr>
+            <tr><td><i class="mark"></i>10 lug 2021</td><td class="num">5,48</td><td>0,27 – 4,20</td><td>PROAVIS</td></tr>
+            <tr><td><i class="mark"></i>12 mar 2021</td><td class="num">5,96</td><td>0,27 – 4,20</td><td>PROAVIS</td></tr>
+          </tbody>
+        </table>
+        <div style="height:24px"></div>
+      </div>
+      <nav class="tabs" aria-label="Principale">
+        <a href="#"><svg viewBox="0 0 24 24"><path d="M4 11 12 4l8 7v9H4z"/></svg>Home</a>
+        <a href="#"><svg viewBox="0 0 24 24"><path d="M7 3h10v18H7zM10 8h4M10 12h4M10 16h2"/></svg>Referti</a>
+        <button class="add" type="button" aria-label="Carica un referto"><svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 5v14M5 12h14"/></svg></button>
+        <a href="#" aria-current="page"><svg viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"/><circle cx="16" cy="6" r="1.8" fill="currentColor"/><circle cx="8" cy="12" r="1.8" fill="currentColor"/><circle cx="13" cy="18" r="1.8" fill="currentColor"/></svg>Analiti</a>
+        <a href="#"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/></svg>Impostazioni</a>
+      </nav>
+    </div>
+  </section>
+
+  <!-- ===================== VERIFICA ===================== -->
+  <section class="phone-wrap" aria-labelledby="t-verifica">
+    <h2 id="t-verifica">Verifica (referto del 4 ottobre 2021)</h2>
+    <div class="phone">
+      <div class="screen">
+        <div class="verify-head">
+          <h3>Controlla i valori letti</h3>
+          <p>49 valori letti dal PDF, 3 da controllare. Niente viene salvato finché non confermi.</p>
+        </div>
+        <div class="fields">
+          <div class="field"><label>Data del prelievo</label><div class="input">04/10/2021</div></div>
+          <div class="field"><label>Tipo</label><div class="input">Sangue e urine</div></div>
+          <div class="field wide"><label>Laboratorio</label><div class="input">PROAVIS</div></div>
+        </div>
+        <div class="chips">
+          <button class="chip" type="button" aria-pressed="true">Da controllare, 3</button>
+          <button class="chip" type="button" aria-pressed="false">Tutti, 49</button>
+        </div>
+        <div style="height:16px"></div>
+
+        <div class="vrow doubt">
+          <div class="top"><span class="name">Peso specifico urine</span><span class="conf">lettura incerta</span></div>
+          <div class="grid3"><div class="input num">1.029</div><div class="input" style="color:var(--cenere)">unità</div><div class="input">1.007 – 1.035</div></div>
+          <div class="why"><svg viewBox="0 0 24 24"><path d="M12 3 2.5 20h19zM12 10v4.5M12 17.5v.1"/></svg><span>Il punto può essere decimale o migliaia. Quale numero c'è sul referto?</span></div>
+          <div class="choice"><button type="button" aria-pressed="true">1,029</button><button type="button" aria-pressed="false">1029</button></div>
+        </div>
+
+        <div class="vrow doubt">
+          <div class="top"><span class="name">Vitamina D (25 OH)</span><span class="conf">range da confermare</span></div>
+          <div class="grid3"><div class="input num">65,8</div><div class="input">ng/mL</div><div class="input">&gt; 30</div></div>
+          <div class="why"><svg viewBox="0 0 24 24"><path d="M12 3 2.5 20h19zM12 10v4.5M12 17.5v.1"/></svg><span>Il referto stampa il range su più righe. Ho preso "&gt; 30 Normale". Correggi se serve.</span></div>
+        </div>
+
+        <div class="vrow doubt">
+          <div class="top"><span class="name">Cristalli</span><span class="conf">non riconosciuto</span></div>
+          <div class="grid3" style="grid-template-columns:1fr"><div class="input">Rari, di fosfato triplo</div></div>
+          <div class="why"><svg viewBox="0 0 24 24"><path d="M12 3 2.5 20h19zM12 10v4.5M12 17.5v.1"/></svg><span>Non è nel catalogo. Puoi salvarlo come analita personalizzato o eliminare la riga.</span></div>
+          <div class="choice"><button type="button" aria-pressed="false">Salva come personalizzato</button><button type="button" aria-pressed="false">Elimina riga</button></div>
+        </div>
+
+        <div class="vrow">
+          <div class="top"><span class="name">TSH</span><span class="conf">letto bene</span></div>
+          <div class="grid3"><div class="input num">5,31</div><div class="input">µUI/mL</div><div class="input">0,27 – 4,20</div></div>
+          <div class="rail" style="--x:91.3%"><i class="dot out"></i></div>
+        </div>
+        <div style="height:16px"></div>
+      </div>
+      <div class="savebar">
+        <button class="ghost" type="button">Vedi originale</button>
+        <button class="primary" type="button">Salva referto</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+// Theme toggle for the mockup only.
+document.querySelectorAll('[data-theme-btn]').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var theme = btn.getAttribute('data-theme-btn');
+    if (theme === 'carta') document.documentElement.setAttribute('data-theme', 'carta');
+    else document.documentElement.removeAttribute('data-theme');
+    document.querySelectorAll('[data-theme-btn]').forEach(function (b) {
+      b.setAttribute('aria-pressed', String(b === btn));
+    });
+  });
+});
+
+</script>
+</body>
+</html>

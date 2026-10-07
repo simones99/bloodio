@@ -1,0 +1,11 @@
+dist
+coverage
+node_modules
+public/ocr
+tests/fixtures
+docs
+.superpowers
+*.md
+package-lock.json
+playwright-report
+test-results

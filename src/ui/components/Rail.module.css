@@ -1,0 +1,87 @@
+.rail {
+  position: relative;
+  height: 20px;
+  width: 100%;
+}
+
+/* hairline across the whole width: the space beyond the track reads as "outside the range" */
+.rail::after {
+  content: '';
+  position: absolute;
+  top: 9.5px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--filetto);
+}
+
+/* the printed range, rounded like the bottom of a test tube */
+.rail::before {
+  content: '';
+  position: absolute;
+  z-index: 1;
+  top: 7px;
+  left: 20%;
+  right: 20%;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--binario);
+}
+
+.rail[data-empty]::before {
+  display: none;
+}
+
+.dot {
+  position: absolute;
+  z-index: 2;
+  top: 4px;
+  left: var(--x);
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  border-radius: 50%;
+  background: var(--punto);
+  box-shadow: 0 0 0 3px var(--nero);
+}
+
+/* out of range: a different shape, not only a different colour */
+.dot[data-kind='out'] {
+  top: 4.5px;
+  width: 11px;
+  height: 11px;
+  border-radius: 2px;
+  background: var(--arterioso);
+  transform: rotate(45deg);
+}
+
+.dot[data-kind='watch'] {
+  background: var(--siero);
+}
+
+/* "<10": the true value is somewhere below, so the point is hollow */
+.dot[data-kind='open'] {
+  background: var(--nero);
+  border: 2px solid var(--punto);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .rail[data-animate] .dot {
+    animation: travel 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+    animation-delay: calc(var(--i) * 60ms + 150ms);
+  }
+}
+
+@keyframes travel {
+  from {
+    left: 20%;
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  to {
+    left: var(--x);
+    opacity: 1;
+  }
+}

@@ -1,0 +1,146 @@
+.row {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px var(--gutter);
+  border-top: 1px solid var(--filetto);
+}
+
+/* a doubtful row: bar, icon and sentence, never colour alone */
+.row[data-pending]::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--siero);
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.name {
+  font-size: 17px;
+  font-weight: 650;
+}
+
+.printed {
+  font-size: 13px;
+  color: var(--cenere);
+  font-stretch: var(--dense-stretch);
+}
+
+.state {
+  font-size: 13px;
+  color: var(--cenere);
+  white-space: nowrap;
+}
+
+.analyte {
+  display: block;
+  width: 100%;
+  min-height: 46px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-field);
+  background: var(--grafite);
+  text-align: left;
+}
+
+.analyte[aria-invalid='true'] {
+  border-color: var(--arterioso);
+}
+
+.analyte > span:first-child {
+  margin-bottom: 1px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.number {
+  font-weight: 600;
+  font-stretch: var(--dense-stretch);
+}
+
+.reason {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--siero);
+}
+
+.reason svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.inline {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--tap);
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.choice {
+  display: flex;
+  gap: 8px;
+}
+
+.choice button {
+  min-height: var(--tap);
+  padding: 0 16px;
+  border: 1px solid var(--siero);
+  border-radius: var(--radius-pill);
+  color: var(--siero);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.choice button[aria-pressed='true'] {
+  background: var(--siero);
+  color: #000;
+}
+
+.problem {
+  font-size: 14px;
+  color: var(--arterioso-testo);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.confirm {
+  min-height: var(--tap);
+  padding: 0 16px;
+  border: 1px solid var(--siero);
+  border-radius: var(--radius-pill);
+  color: var(--siero);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.actions > :only-child {
+  margin-left: auto;
+}

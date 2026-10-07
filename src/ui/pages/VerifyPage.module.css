@@ -1,0 +1,64 @@
+.frame {
+  display: flex;
+  flex-direction: column;
+  height: 100svh;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 20px var(--gutter) 0;
+}
+
+.wide {
+  grid-column: 1 / -1;
+}
+
+.fields textarea {
+  resize: vertical;
+}
+
+.rows {
+  margin-top: 16px;
+  border-bottom: 1px solid var(--filetto);
+}
+
+.none {
+  padding: 20px var(--gutter);
+  border-top: 1px solid var(--filetto);
+  color: var(--cenere);
+}
+
+.add {
+  padding: 20px var(--gutter) 32px;
+}
+
+.savebar {
+  padding: 12px var(--gutter) calc(14px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--filetto);
+  background: var(--nero);
+}
+
+.blocked {
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: var(--arterioso-testo);
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.save {
+  flex: 1;
+}

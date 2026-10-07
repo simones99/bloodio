@@ -1,0 +1,42 @@
+.pick {
+  padding: 32px var(--gutter) 0;
+}
+
+.choose {
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.choose[data-busy] {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+/* the real input is visually hidden: show its focus on the label */
+input:focus-visible + .choose {
+  outline: 2px solid var(--testo);
+  outline-offset: 3px;
+}
+
+.alertTitle {
+  font-weight: 650;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-top: 14px;
+}
+
+.link {
+  display: inline-grid;
+  place-items: center;
+  text-decoration: none;
+}
+
+.manualAction {
+  padding: 14px var(--gutter) 0;
+}

@@ -1,0 +1,54 @@
+[
+  {
+    "prefix": "http://www.w3.org/",
+    "reason": "XML/SVG/MathML namespace identifiers used by React DOM; never fetched"
+  },
+  {
+    "prefix": "https://react.dev/errors/",
+    "reason": "Link printed inside React production error messages; never fetched"
+  },
+  {
+    "prefix": "https://tinyurl.com/y2uuvskb",
+    "reason": "Dexie: documentation link inside an error message; never fetched"
+  },
+  {
+    "prefix": "http://bit.ly/2kdckMn",
+    "reason": "Dexie: documentation link inside an error message; never fetched"
+  },
+  {
+    "prefix": "https://json-schema.org/draft/2020-12/schema",
+    "reason": "zod: JSON Schema dialect identifier constant; never fetched"
+  },
+  {
+    "prefix": "http://json-schema.org/draft-0",
+    "reason": "zod: JSON Schema dialect identifier constants (draft-04, draft-07); never fetched"
+  },
+  {
+    "prefix": "https://reactrouter.com/",
+    "reason": "React Router: documentation link inside a warning message; never fetched"
+  },
+  {
+    "prefix": "https://github.com/ungap/url-search-params",
+    "reason": "React Router: polyfill hint inside a warning message; never fetched"
+  },
+  {
+    "prefix": "http://example.com",
+    "reason": "pdf.js: dummy base passed to new URL() to validate relative links; never fetched"
+  },
+  {
+    "prefix": "https://foo.bar",
+    "reason": "pdf.js: dummy base passed to new URL(); never fetched"
+  },
+  {
+    "prefix": "http://www.apache.org/licenses/",
+    "reason": "pdf.js worker: licence header comment; never fetched"
+  },
+  {
+    "prefix": "http://www.xfa.org/schema/",
+    "reason": "pdf.js worker: XFA XML namespace identifiers; never fetched"
+  },
+  {
+    "prefix": "http://ns.adobe.com/",
+    "reason": "pdf.js worker: Adobe XML namespace identifiers; never fetched"
+  }
+]

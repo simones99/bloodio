@@ -1,0 +1,92 @@
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  column-gap: 12px;
+  row-gap: 6px;
+  padding: 14px var(--gutter);
+  border-top: 1px solid var(--filetto);
+}
+
+.name {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+a.name {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--binario);
+  text-underline-offset: 4px;
+}
+
+.value {
+  font-size: 17px;
+  font-weight: 600;
+  text-align: right;
+  font-stretch: var(--dense-stretch);
+}
+
+.value small {
+  margin-left: 4px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--cenere);
+}
+
+.rail {
+  grid-column: 1 / -1;
+}
+
+.meta {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 18px;
+  font-size: 13px;
+  color: var(--cenere);
+  font-stretch: var(--dense-stretch);
+}
+
+.ref {
+  margin-left: auto;
+  text-align: right;
+}
+
+.notes {
+  padding: 0 var(--gutter);
+  white-space: pre-wrap;
+}
+
+.actions {
+  padding: 4px var(--gutter) 0;
+}
+
+.danger {
+  padding: 40px var(--gutter) 0;
+}
+
+.confirm {
+  padding: 20px;
+  border-radius: var(--radius-sheet);
+  background: var(--grafite);
+}
+
+.confirm h2 {
+  font-size: 18px;
+  font-weight: 650;
+}
+
+.confirm p {
+  margin-top: 8px;
+  color: var(--cenere);
+  font-size: 15px;
+}
+
+.confirmActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+}
