@@ -15,6 +15,7 @@ function renderAt(path: string) {
     <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route element={<Layout />}>
+          <Route index element={<p>home</p>} />
           <Route path="/analytes" element={<p>lista</p>} />
           <Route path="/analytes/:ref" element={<p>voce</p>} />
           <Route path="/reports" element={<p>referti</p>} />
@@ -34,5 +35,16 @@ describe('Layout tab bar', () => {
   it('keeps "Valori" current on an entry page', () => {
     renderAt('/analytes/tsh');
     expect(screen.getByRole('link', { name: 'Valori' })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('has a "Home" tab, current only on the start page', () => {
+    renderAt('/');
+    expect(screen.getByRole('link', { name: 'Home' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: 'Referti' })).not.toHaveAttribute('aria-current');
+  });
+
+  it('does not keep "Home" current on other pages', () => {
+    renderAt('/reports');
+    expect(screen.getByRole('link', { name: 'Home' })).not.toHaveAttribute('aria-current');
   });
 });

@@ -132,6 +132,7 @@ export function AnalytePage() {
         points: await reports.listSeries(ref),
         custom: await customAnalytes.list(),
         preferred: await settings.get('preferredUnits'),
+        system: await settings.get('unitSystem'),
       }),
       [reports, customAnalytes, settings, ref],
     ),
@@ -140,9 +141,9 @@ export function AnalytePage() {
 
   const view = useMemo(() => {
     if (loaded.status !== 'ready') return null;
-    const { points, custom, preferred } = loaded.data;
+    const { points, custom, preferred, system } = loaded.data;
     const unit = picked?.refKey === refKey ? picked.unit : preferred[refKey];
-    return buildAnalyteView(points, ref, custom, unit);
+    return buildAnalyteView(points, ref, custom, unit, system);
   }, [loaded, picked, ref, refKey]);
 
   async function pickUnit(unit: string) {
@@ -208,7 +209,7 @@ export function AnalytePage() {
         </button>
         <p className={styles.category}>{it.category[view.category]}</p>
         <h1 className={styles.name}>{view.name}</h1>
-        <Header row={view.latest} watch={view.watch} />
+        <Header row={view.latest} watch={view.watch !== null} />
       </header>
 
       {view.chartPoints.length >= 2 && view.summary && (

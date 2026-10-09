@@ -96,4 +96,26 @@ describe('catalog integrity', () => {
       'vitamin-b12': { min: 50, max: 7500 },
     });
   });
+
+  it('declares an SI unit the analyte can be shown in', () => {
+    for (const analyte of CATALOG) {
+      if (analyte.siUnit === undefined) continue;
+      expect(unitsOf(analyte), analyte.id).toContain(analyte.siUnit);
+    }
+  });
+
+  it('declares the SI unit of every analyte with alternative units, except eGFR', () => {
+    const missing = CATALOG.filter((a) => (a.units?.length ?? 0) > 0 && a.siUnit === undefined);
+    expect(missing.map((a) => a.id)).toEqual(['egfr']);
+  });
+
+  it('knows the SI unit of the common pairs', () => {
+    expect(getAnalyte('glucose')!.siUnit).toBe('mmol/L');
+    expect(getAnalyte('total-cholesterol')!.siUnit).toBe('mmol/L');
+    expect(getAnalyte('creatinine')!.siUnit).toBe('µmol/L');
+    expect(getAnalyte('hemoglobin')!.siUnit).toBe('g/L');
+    expect(getAnalyte('wbc')!.siUnit).toBe('10^9/L');
+    expect(getAnalyte('rbc')!.siUnit).toBe('10^12/L');
+    expect(getAnalyte('tsh')!.siUnit).toBe('mUI/L');
+  });
 });

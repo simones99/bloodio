@@ -6,6 +6,7 @@ import { useServices } from './app/services';
 import { useQuery } from './app/use-query';
 import { ImportSessionProvider } from './import/import-session';
 import { AnalyteRoute } from './pages/AnalytePage';
+import { HomePage } from './pages/HomePage';
 import { ImportPage } from './pages/ImportPage';
 import { ReportDetailPage } from './pages/ReportDetailPage';
 import { ReportsPage } from './pages/ReportsPage';
@@ -14,7 +15,7 @@ import { ValuesPage } from './pages/ValuesPage';
 import { VerifyPage } from './pages/VerifyPage';
 
 export function App() {
-  const { settings } = useServices();
+  const { settings, storage } = useServices();
   const accepted = useQuery(
     useCallback(() => settings.get('disclaimerAcceptedAt'), [settings]),
     settings.subscribe,
@@ -24,7 +25,11 @@ export function App() {
   if (accepted.data === null) {
     return (
       <Disclaimer
-        onAccept={() => void settings.set('disclaimerAcceptedAt', new Date().toISOString())}
+        onAccept={() => {
+          // Inside the tap: browsers that show a prompt (Firefox) need the user gesture.
+          void storage.requestPersist();
+          void settings.set('disclaimerAcceptedAt', new Date().toISOString());
+        }}
       />
     );
   }
@@ -34,7 +39,7 @@ export function App() {
       <ImportSessionProvider>
         <Routes>
           <Route element={<Layout />}>
-            <Route index element={<Navigate to="/reports" replace />} />
+            <Route index element={<HomePage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="reports/:id" element={<ReportDetailPage />} />
             <Route path="analytes" element={<ValuesPage />} />
@@ -43,7 +48,7 @@ export function App() {
             <Route path="settings" element={<SettingsPage />} />
           </Route>
           <Route path="import/verify" element={<VerifyPage />} />
-          <Route path="*" element={<Navigate to="/reports" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </ImportSessionProvider>
     </HashRouter>

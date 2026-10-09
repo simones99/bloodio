@@ -48,6 +48,7 @@ export const liver: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'mg/dL',
     units: BILIRUBIN_UNITS,
+    siUnit: 'µmol/L',
   },
   {
     id: 'bilirubin-direct',
@@ -58,6 +59,7 @@ export const liver: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'mg/dL',
     units: BILIRUBIN_UNITS,
+    siUnit: 'µmol/L',
   },
   {
     id: 'bilirubin-indirect',
@@ -68,6 +70,7 @@ export const liver: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'mg/dL',
     units: BILIRUBIN_UNITS,
+    siUnit: 'µmol/L',
   },
 ];
 
@@ -81,6 +84,7 @@ export const thyroid: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'µUI/mL',
     units: [{ unit: 'mUI/L', toCanonical: 1 }],
+    siUnit: 'mUI/L',
   },
   // FT4: 1 pg/mL = 0.1 ng/dL; 1 pmol/L = 0.0777 ng/dL
   {
@@ -95,6 +99,7 @@ export const thyroid: Analyte[] = [
       { unit: 'pg/mL', toCanonical: 0.1 },
       { unit: 'pmol/L', toCanonical: 0.0777 },
     ],
+    siUnit: 'pmol/L',
   },
   // FT3: 1 pmol/L = 0.651 pg/mL
   {
@@ -106,6 +111,7 @@ export const thyroid: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'pg/mL',
     units: [{ unit: 'pmol/L', toCanonical: 0.651 }],
+    siUnit: 'pmol/L',
   },
   {
     id: 'thyroglobulin',
@@ -116,6 +122,7 @@ export const thyroid: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'ng/mL',
     units: [{ unit: 'µg/L', toCanonical: 1 }],
+    siUnit: 'µg/L',
   },
   {
     id: 'anti-tpo',
@@ -186,6 +193,7 @@ export const hormones: Analyte[] = [
       { unit: 'ng/dL', toCanonical: 0.01 },
       { unit: 'nmol/L', toCanonical: 0.2884 },
     ],
+    siUnit: 'nmol/L',
   },
   {
     id: 'testosterone-free',
@@ -215,6 +223,7 @@ export const hormones: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'µg/dL',
     units: [{ unit: 'nmol/L', toCanonical: 0.03625 }],
+    siUnit: 'nmol/L',
   },
   {
     id: 'prolactin',
@@ -225,6 +234,7 @@ export const hormones: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'ng/mL',
     units: [{ unit: 'µg/L', toCanonical: 1 }],
+    siUnit: 'µg/L',
   },
   // estradiol: 1 pmol/L = 0.2724 pg/mL
   {
@@ -236,6 +246,7 @@ export const hormones: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'pg/mL',
     units: [{ unit: 'pmol/L', toCanonical: 0.2724 }],
+    siUnit: 'pmol/L',
   },
   // progesterone: 1 nmol/L = 0.3145 ng/mL
   {
@@ -247,6 +258,7 @@ export const hormones: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'ng/mL',
     units: [{ unit: 'nmol/L', toCanonical: 0.3145 }],
+    siUnit: 'nmol/L',
   },
   {
     id: 'lh',
@@ -257,6 +269,7 @@ export const hormones: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'mUI/mL',
     units: [{ unit: 'U/L', toCanonical: 1 }],
+    siUnit: 'U/L',
   },
   {
     id: 'fsh',
@@ -267,6 +280,7 @@ export const hormones: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'mUI/mL',
     units: [{ unit: 'U/L', toCanonical: 1 }],
+    siUnit: 'U/L',
   },
   {
     id: 'dhea-s',

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { watchSide, type TrendPoint } from '../../src/domain/trend';
+import { limitDistance, watchSide, type TrendPoint } from '../../src/domain/trend';
 
 const p = (value: number, refMin: number | null, refMax: number | null): TrendPoint => ({
   value,
@@ -40,5 +40,27 @@ describe('watchSide', () => {
   });
   it('is null without a range', () => {
     expect(watchSide([p(1, null, null), p(2, null, null)])).toBeNull();
+  });
+});
+
+describe('limitDistance', () => {
+  it('measures a two-sided range in spans, from the nearest limit', () => {
+    expect(limitDistance(130, 70, 110)).toBeCloseTo(0.5); // above
+    expect(limitDistance(50, 70, 110)).toBeCloseTo(0.5); // below
+    expect(limitDistance(105, 70, 110)).toBeCloseTo(0.125); // inside, near the upper limit
+    expect(limitDistance(72, 70, 110)).toBeCloseTo(0.05); // inside, near the lower limit
+  });
+
+  it('measures a one-sided range relative to its limit', () => {
+    expect(limitDistance(8, null, 6)).toBeCloseTo(1 / 3); // "< 6", above
+    expect(limitDistance(5.4, null, 6)).toBeCloseTo(0.1); // "< 6", inside
+    expect(limitDistance(30, 40, null)).toBeCloseTo(0.25); // "> 40", below
+  });
+
+  it('has no distance without a usable range', () => {
+    expect(limitDistance(5, null, null)).toBeNull();
+    expect(limitDistance(5, 4, 4)).toBeNull();
+    expect(limitDistance(5, 6, 4)).toBeNull();
+    expect(limitDistance(5, null, 0)).toBeNull();
   });
 });

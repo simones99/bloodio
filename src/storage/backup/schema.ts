@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { UNIT_SYSTEMS } from '../../domain/types';
 
 /** Bump together with the Dexie schema version whenever the stored shape changes. */
 export const EXPORT_VERSION = 1;
@@ -83,6 +84,8 @@ export const exportFileV1 = z.object({
     measurements: z.array(measurement),
     customAnalytes: z.array(customAnalyte),
     preferredUnits: z.record(z.string(), z.string()),
+    // Optional, added after v1 shipped: older v1 files stay valid (ADR 0002).
+    unitSystem: z.enum(UNIT_SYSTEMS).optional(),
     attachments: z.array(attachment),
   }),
 });

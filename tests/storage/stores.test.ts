@@ -81,4 +81,16 @@ describe('SettingsStore', () => {
     expect(await store.get('preferredUnits')).toEqual({ glucose: 'mmol/L' });
     expect(listener).toHaveBeenCalledTimes(2);
   });
+
+  it('shows values as printed until the user picks a unit system', async () => {
+    expect(await createSettingsStore(db).get('unitSystem')).toBe('printed');
+  });
+
+  it('notifies subscribers on invalidate', () => {
+    const store = createSettingsStore(db);
+    const listener = vi.fn();
+    store.subscribe(listener);
+    store.invalidate();
+    expect(listener).toHaveBeenCalledTimes(1);
+  });
 });

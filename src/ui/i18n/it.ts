@@ -1,4 +1,5 @@
 import type { IngestErrorCode } from '../../ingest/ingest-file';
+import type { WatchSide } from '../../domain/trend';
 import type { Category, ReportType } from '../../domain/types';
 import type { RowProblem } from '../../parsers/editable';
 import type { RowFlag } from '../../parsers/types';
@@ -8,6 +9,7 @@ export const it = {
   appName: 'Bloodio',
   nav: {
     main: 'Principale',
+    home: 'Home',
     reports: 'Referti',
     add: 'Carica un referto',
     values: 'Valori',
@@ -19,7 +21,7 @@ export const it = {
     body: [
       'Bloodio mostra i valori dei tuoi referti e li confronta con i range stampati dal laboratorio. Non interpreta i risultati, non fa diagnosi e non suggerisce terapie: per questo c’è il tuo medico.',
       'I tuoi dati restano su questo dispositivo. Non esiste un account, non c’è un server e nessun dato viene inviato in rete.',
-      'L’unica copia dei dati è su questo dispositivo: se lo cambi o cancelli i dati del browser, i referti si perdono. L’esportazione arriva con il prossimo aggiornamento.',
+      'L’unica copia dei dati è su questo dispositivo: se lo cambi o cancelli i dati del browser, i referti si perdono. Dalle impostazioni puoi esportarli in un file e tenerne una copia.',
     ],
     accept: 'Ho capito, inizia',
   },
@@ -83,6 +85,8 @@ export const it = {
     saved: 'Referto salvato',
     updated: 'Modifiche salvate',
     notFound: 'Questo referto non esiste più.',
+    printedAs: (value: string, range?: string) =>
+      range ? `sul referto: ${value}, range ${range}` : `sul referto: ${value}`,
   },
 
   analyte: {
@@ -153,6 +157,40 @@ export const it = {
     load: 'Carica un referto',
     noMatch: 'Nessuna voce con questo nome.',
     loadFailed: 'Non sono riuscito a leggere i valori. Riprova.',
+  },
+  home: {
+    title: 'Home',
+    loadFailed: 'Non sono riuscito a leggere i tuoi dati. Riprova.',
+    slabLabel: (date: string, lab: string, out: number) =>
+      `Ultimo referto, ${date}, ${lab}, ${out === 1 ? '1 valore' : `${out} valori`} fuori range`,
+    summary: (out: number, inside: number, notEvaluable: number) => {
+      const parts = [
+        `${out === 1 ? '1 valore' : `${out} valori`} fuori dal range stampato`,
+        `${inside} dentro`,
+      ];
+      if (notEvaluable > 0) {
+        parts.push(`${notEvaluable} non valutabil${notEvaluable === 1 ? 'e' : 'i'}`);
+      }
+      return `${parts.join(', ')}.`;
+    },
+    outOfRange: 'Fuori range',
+    watch: 'Da tenere d’occhio',
+    watchHint: 'vicino al limite del range stampato',
+    watchLabel: {
+      upper: 'vicino al limite, in salita',
+      lower: 'vicino al limite, in discesa',
+    } satisfies Record<WatchSide, string>,
+    older: 'Da referti precedenti',
+    olderHidden: (n: number) => `Più vecchi di 12 mesi: ${n === 1 ? '1 valore' : `${n} valori`}`,
+    recent: 'Ultimi referti',
+    allReports: 'Tutti i referti',
+    backup: {
+      text: 'Ci sono dati non ancora esportati.',
+      export: 'Esporta ora',
+      later: 'Più tardi',
+      noFiles: 'I file originali non sono inclusi.',
+      toSettings: 'Per includerli esporta da Impostazioni.',
+    },
   },
 
   importer: {
@@ -252,7 +290,106 @@ export const it = {
     keepOriginalHint: 'Salva anche il PDF accanto ai valori. Occupa più spazio sul dispositivo.',
     disclaimer: 'Cosa fa e cosa non fa Bloodio',
     version: (v: string) => `Versione ${v}`,
-    more: 'Tema, unità, esportazione e importazione arrivano con il prossimo aggiornamento.',
+
+    theme: {
+      title: 'Aspetto',
+      nero: 'Nero',
+      neroHint: 'Fondo nero, il tema di Bloodio.',
+      carta: 'Carta',
+      cartaHint: 'Fondo bianco, per la luce forte.',
+      auto: 'Automatico',
+      autoHint: 'Segue il tema chiaro o scuro del dispositivo.',
+    },
+
+    units: {
+      title: 'Unità',
+      printed: 'Come sul referto',
+      printedHint: 'Ogni valore nell’unità stampata dal laboratorio.',
+      conventional: 'Convenzionali',
+      conventionalHint: 'Per esempio colesterolo in mg/dL.',
+      si: 'Sistema internazionale (SI)',
+      siHint: 'Per esempio colesterolo in mmol/L.',
+      resetPerEntry: (n: number) => `Ripristina le unità scelte per singole voci (${n})`,
+      resetConfirm: (n: number) =>
+        n === 1
+          ? 'Una voce ha un’unità scelta a mano. Ripristinarla?'
+          : `${n} voci hanno un’unità scelta a mano. Ripristinarle?`,
+      resetDo: 'Ripristina',
+      resetFailed: 'Non sono riuscito a ripristinare le unità. Riprova.',
+      cancel: 'Annulla',
+    },
+
+    data: {
+      title: 'I tuoi dati',
+      export: 'Esporta i dati',
+      exporting: 'Esportazione…',
+      includeFiles: (count: number, size: string) => `Includi i file originali (${count}, ${size})`,
+      exportFailed: 'Non sono riuscito a esportare i dati. Riprova.',
+      neverExported: 'Non hai ancora esportato i tuoi dati.',
+      lastExport: (date: string) => `Ultima esportazione: ${date}.`,
+      pending: 'Ci sono dati non ancora esportati.',
+      import: 'Importa un file',
+      notJson: 'Questo file non è un export di Bloodio.',
+      tooNew: 'Questo file viene da una versione più recente di Bloodio. Aggiorna l’app e riprova.',
+      invalid: 'Il file non è valido.',
+      invalidDetails: 'Dettagli',
+      importFailed: 'Importazione non riuscita. I tuoi dati non sono cambiati.',
+      imported: (added: number, skipped: number) =>
+        [
+          added === 1 ? 'Importato 1 referto' : `Importati ${added} referti`,
+          skipped === 0 ? null : skipped === 1 ? '1 già presente' : `${skipped} già presenti`,
+        ]
+          .filter(Boolean)
+          .join(', '),
+    },
+
+    importDialog: {
+      title: 'Importa i dati',
+      exportedOn: (date: string) => `Esportato il ${date}`,
+      counts: (reports: number, values: number) =>
+        `${reports === 1 ? '1 referto' : `${reports} referti`}, ${values === 1 ? '1 valore' : `${values} valori`}`,
+      period: (from: string, to: string) => (from === to ? `Del ${from}` : `Dal ${from} al ${to}`),
+      labs: (labs: string) => `Laboratori: ${labs}`,
+      duplicates: (n: number) =>
+        n === 1 ? '1 referto è già presente qui.' : `${n} referti sono già presenti qui.`,
+      merge: 'Unisci',
+      mergeHint: 'Unisci aggiunge i referti nuovi e tiene quelli che hai già.',
+      replace: 'Sostituisci',
+      import: 'Importa',
+      replaceTitle: 'Sostituire tutti i tuoi dati?',
+      replaceBody: (n: number) =>
+        n === 1
+          ? 'Il tuo referto attuale sarà cancellato e sostituito da quelli del file.'
+          : `I tuoi ${n} referti attuali saranno cancellati e sostituiti da quelli del file.`,
+      replaceDropsFiles:
+        'Anche i file originali conservati su questo dispositivo saranno cancellati: questo file non li contiene.',
+      replaceConfirm: 'Sostituisci tutto',
+      cancel: 'Annulla',
+    },
+
+    storage: {
+      title: 'Archivio',
+      persisted: 'Archivio protetto: il browser non cancella i dati da solo.',
+      notPersisted: 'Il browser può cancellare i dati se manca spazio. Esporta regolarmente.',
+      protect: 'Proteggi l’archivio',
+      usage: (size: string) => `Spazio usato: ${size}`,
+    },
+
+    wipe: {
+      action: 'Elimina tutti i dati',
+      title: 'Eliminare tutti i dati?',
+      body: (reports: number, values: number) =>
+        `${reports === 1 ? '1 referto' : `${reports} referti`}, ${values === 1 ? '1 valore' : `${values} valori`}, i file originali, le voci personalizzate e le impostazioni. Non si può annullare.`,
+      bodyUnknown:
+        'Tutti i referti, i valori, i file originali, le voci personalizzate e le impostazioni. Non si può annullare.',
+      exportFirst: 'Esporta prima',
+      continue: 'Continua',
+      confirmTitle: 'Ultima conferma',
+      confirmBody: 'Tutti i dati di Bloodio su questo dispositivo spariscono adesso.',
+      confirm: 'Elimina definitivamente',
+      cancel: 'Annulla',
+      failed: 'Eliminazione non riuscita. I tuoi dati sono ancora qui.',
+    },
   },
 } as const;
 
@@ -299,3 +436,11 @@ const CONVERTED_LARGE = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 
  */
 export const formatConvertedNumber = (value: number) =>
   Math.abs(value) >= 1000 ? CONVERTED_LARGE.format(value) : CONVERTED_SMALL.format(value);
+
+const SIZE_MB = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 1 });
+
+/** "340 KB", "1,2 MB". */
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${Math.ceil(bytes / 1024)} KB`;
+  return `${SIZE_MB.format(bytes / (1024 * 1024))} MB`;
+}

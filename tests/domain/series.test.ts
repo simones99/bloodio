@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { getAnalyte } from '../../src/domain/catalog';
-import { defaultDisplayUnit, toSeries, trendPoints } from '../../src/domain/series';
+import { displayUnit, toSeries, trendPoints } from '../../src/domain/series';
 import { watchSide } from '../../src/domain/trend';
 import type { Measurement } from '../../src/domain/types';
 
@@ -107,11 +107,37 @@ describe('trendPoints', () => {
   });
 });
 
-describe('defaultDisplayUnit', () => {
-  it('prefers the user choice when the analyte can convert to it', () => {
-    expect(defaultDisplayUnit(ft4, 'ng/dl', 'pmol/L')).toBe('pmol/L');
-    expect(defaultDisplayUnit(ft4, 'ng/dl', 'g/L')).toBe('ng/dL');
-    expect(defaultDisplayUnit(ft4, 'ng/dl')).toBe('ng/dL');
-    expect(defaultDisplayUnit(undefined, null)).toBeNull();
+describe('displayUnit', () => {
+  const glucose = getAnalyte('glucose');
+  const printed = { system: 'printed' } as const;
+
+  it('prefers the user choice for the entry when the analyte can convert to it', () => {
+    expect(displayUnit(ft4, 'ng/dl', { preferred: 'pmol/L', system: 'printed' })).toBe('pmol/L');
+    expect(displayUnit(ft4, 'ng/dl', { preferred: 'g/L', system: 'printed' })).toBe('ng/dL');
+    expect(displayUnit(ft4, 'ng/dl', printed)).toBe('ng/dL');
+    expect(displayUnit(undefined, null, printed)).toBeNull();
+  });
+
+  it('applies the unit system when the printed unit converts to it', () => {
+    expect(displayUnit(glucose, 'mmol/l', { system: 'conventional' })).toBe('mg/dL');
+    expect(displayUnit(glucose, 'mg/dl', { system: 'si' })).toBe('mmol/L');
+    expect(displayUnit(glucose, 'mg/dl', printed)).toBe('mg/dL');
+  });
+
+  it('lets the choice for one entry win over the unit system', () => {
+    expect(displayUnit(glucose, 'mg/dL', { preferred: 'mg/dL', system: 'si' })).toBe('mg/dL');
+    expect(displayUnit(glucose, 'mg/dl', { preferred: 'g/L', system: 'si' })).toBe('mmol/L');
+  });
+
+  it('keeps the printed unit when the system has no unit for the analyte or cannot convert', () => {
+    expect(displayUnit(getAnalyte('egfr'), 'mL/min', { system: 'si' })).toBe('mL/min');
+    expect(displayUnit(getAnalyte('egfr'), 'mL/min', { system: 'conventional' })).toBe('mL/min');
+    expect(displayUnit(glucose, 'g/L', { system: 'si' })).toBe('g/L');
+    expect(displayUnit(glucose, null, { system: 'si' })).toBeNull();
+  });
+
+  it('never converts custom analytes or analytes without a unit pair', () => {
+    expect(displayUnit(undefined, 'mg/dl', { system: 'si' })).toBe('mg/dL');
+    expect(displayUnit(getAnalyte('hba1c'), '%', { system: 'si' })).toBe('%');
   });
 });

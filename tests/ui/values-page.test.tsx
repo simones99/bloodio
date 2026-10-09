@@ -182,4 +182,13 @@ describe('ValuesPage', () => {
     const link = await screen.findByRole('link', { name: /Paglierino/ });
     expect(link.querySelector('[aria-hidden="true"][class*="rail"]')).toBeNull();
   });
+
+  it('shows values in the unit system chosen in the settings', async () => {
+    const services = await seeded();
+    await services.settings.set('unitSystem', 'si');
+    renderValues(services);
+    expect(await screen.findByRole('link', { name: /^Glicemia/ })).toHaveAccessibleName(
+      /5,27 mmol\/L/,
+    );
+  });
 });

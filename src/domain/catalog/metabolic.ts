@@ -11,6 +11,7 @@ const lipid = (id: string, name: string, aliases: string[]): Analyte => ({
   kind: 'numeric',
   canonicalUnit: 'mg/dL',
   units: CHOLESTEROL_UNITS,
+  siUnit: 'mmol/L',
 });
 
 export const lipids: Analyte[] = [
@@ -40,6 +41,7 @@ export const lipids: Analyte[] = [
     canonicalUnit: 'mg/dL',
     // 1 mmol/L = 88.57 mg/dL
     units: [{ unit: 'mmol/L', toCanonical: 88.57 }],
+    siUnit: 'mmol/L',
   },
   {
     id: 'lipoprotein-a',
@@ -81,6 +83,7 @@ export const glucose: Analyte[] = [
     canonicalUnit: 'mg/dL',
     // 1 mmol/L = 18.016 mg/dL
     units: [{ unit: 'mmol/L', toCanonical: 18.016 }],
+    siUnit: 'mmol/L',
     plausible: { min: 2, max: 1500 },
   },
   {
@@ -103,6 +106,7 @@ export const glucose: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'µUI/mL',
     units: [{ unit: 'mUI/L', toCanonical: 1 }],
+    siUnit: 'mUI/L',
   },
   {
     id: 'c-peptide',
@@ -126,6 +130,7 @@ export const kidney: Analyte[] = [
     canonicalUnit: 'mg/dL',
     // 1 mg/dL = 88.4 µmol/L
     units: [{ unit: 'µmol/L', toCanonical: 1 / 88.4 }],
+    siUnit: 'µmol/L',
   },
   {
     id: 'urea',
@@ -137,6 +142,7 @@ export const kidney: Analyte[] = [
     canonicalUnit: 'mg/dL',
     // urea: 1 mmol/L = 6.006 mg/dL
     units: [{ unit: 'mmol/L', toCanonical: 6.006 }],
+    siUnit: 'mmol/L',
   },
   {
     id: 'uric-acid',
@@ -148,6 +154,7 @@ export const kidney: Analyte[] = [
     canonicalUnit: 'mg/dL',
     // 1 mg/dL = 59.48 µmol/L
     units: [{ unit: 'µmol/L', toCanonical: 1 / 59.48 }],
+    siUnit: 'µmol/L',
   },
   {
     id: 'egfr',
@@ -171,6 +178,7 @@ export const electrolytes: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'mEq/L',
     units: [{ unit: 'mmol/L', toCanonical: 1 }],
+    siUnit: 'mmol/L',
   },
   {
     id: 'potassium',
@@ -181,6 +189,7 @@ export const electrolytes: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'mEq/L',
     units: [{ unit: 'mmol/L', toCanonical: 1 }],
+    siUnit: 'mmol/L',
   },
   {
     id: 'chloride',
@@ -191,6 +200,7 @@ export const electrolytes: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'mEq/L',
     units: [{ unit: 'mmol/L', toCanonical: 1 }],
+    siUnit: 'mmol/L',
   },
   // calcium: 1 mmol/L = 4.008 mg/dL
   {
@@ -202,6 +212,7 @@ export const electrolytes: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'mg/dL',
     units: [{ unit: 'mmol/L', toCanonical: 4.008 }],
+    siUnit: 'mmol/L',
   },
   // phosphorus: 1 mmol/L = 3.097 mg/dL
   {
@@ -213,6 +224,7 @@ export const electrolytes: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'mg/dL',
     units: [{ unit: 'mmol/L', toCanonical: 3.097 }],
+    siUnit: 'mmol/L',
   },
   // magnesium: 1 mmol/L = 2.431 mg/dL
   {
@@ -224,6 +236,7 @@ export const electrolytes: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'mg/dL',
     units: [{ unit: 'mmol/L', toCanonical: 2.431 }],
+    siUnit: 'mmol/L',
   },
 ];
 
@@ -238,6 +251,7 @@ export const iron: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'µg/dL',
     units: [{ unit: 'µmol/L', toCanonical: 5.585 }],
+    siUnit: 'µmol/L',
   },
   {
     id: 'ferritin',
@@ -248,6 +262,7 @@ export const iron: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'ng/mL',
     units: [{ unit: 'µg/L', toCanonical: 1 }],
+    siUnit: 'µg/L',
   },
   {
     id: 'transferrin',
@@ -258,6 +273,7 @@ export const iron: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'mg/dL',
     units: [{ unit: 'g/L', toCanonical: 100 }],
+    siUnit: 'g/L',
   },
   {
     id: 'transferrin-saturation',
@@ -282,6 +298,7 @@ export const iron: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'µg/dL',
     units: [{ unit: 'µmol/L', toCanonical: 5.585 }],
+    siUnit: 'µmol/L',
   },
 ];
 
@@ -302,6 +319,7 @@ export const vitamins: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'ng/mL',
     units: [{ unit: 'nmol/L', toCanonical: 0.4006 }],
+    siUnit: 'nmol/L',
   },
   // vitamin B12: 1 pmol/L = 1.355 pg/mL
   {
@@ -313,6 +331,7 @@ export const vitamins: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'pg/mL',
     units: [{ unit: 'pmol/L', toCanonical: 1.355 }],
+    siUnit: 'pmol/L',
     plausible: { min: 50, max: 7500 },
   },
   // folate: 1 nmol/L = 0.4413 ng/mL
@@ -325,6 +344,7 @@ export const vitamins: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'ng/mL',
     units: [{ unit: 'nmol/L', toCanonical: 0.4413 }],
+    siUnit: 'nmol/L',
   },
   // zinc: 1 µmol/L = 6.538 µg/dL
   {
@@ -336,5 +356,6 @@ export const vitamins: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'µg/dL',
     units: [{ unit: 'µmol/L', toCanonical: 6.538 }],
+    siUnit: 'µmol/L',
   },
 ];

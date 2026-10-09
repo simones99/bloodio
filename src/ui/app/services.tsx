@@ -1,6 +1,7 @@
 import { createContext, useContext, type ReactNode } from 'react';
 import type { OpenPdf } from '../../ingest/ingest-file';
 import type { BackupService } from '../../storage/backup/backup-service';
+import type { StorageStatus } from '../../storage/storage-status';
 import type { CustomAnalyteStore, ReportRepository, SettingsStore } from '../../storage/types';
 
 /** Everything the UI needs from outside React. The UI never imports Dexie or pdf.js directly. */
@@ -9,6 +10,9 @@ export interface Services {
   customAnalytes: CustomAnalyteStore;
   settings: SettingsStore;
   backup: BackupService;
+  storage: StorageStatus;
+  /** Reloads the app from its start page: after "elimina tutto" nothing in memory may survive. */
+  restart(): void;
   openPdf: OpenPdf;
 }
 

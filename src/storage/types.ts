@@ -1,4 +1,11 @@
-import type { AnalyteRef, CustomAnalyte, Measurement, Report, ReportType } from '../domain/types';
+import type {
+  AnalyteRef,
+  CustomAnalyte,
+  Measurement,
+  Report,
+  ReportType,
+  UnitSystem,
+} from '../domain/types';
 import type { Listener } from './events';
 
 /** What the caller provides; ids, timestamps and profile are assigned by the repository. */
@@ -29,6 +36,8 @@ export interface ReportSummary {
   report: Report;
   total: number;
   outOfRange: number;
+  /** Values whose range cannot be decided ("non valutabile"). */
+  notEvaluable: number;
 }
 
 export interface ReportFilter {
@@ -65,6 +74,12 @@ export interface LatestReference {
   sampleDate: string;
 }
 
+/** The original files kept on this device. */
+export interface AttachmentSummary {
+  count: number;
+  bytes: number;
+}
+
 export interface DuplicateQuery {
   fileHash?: string | null;
   sampleDate?: string;
@@ -91,6 +106,10 @@ export interface ReportRepository {
   latestReferenceFor(ref: AnalyteRef): Promise<LatestReference | undefined>;
   findDuplicates(query: DuplicateQuery): Promise<Report[]>;
   listLabs(): Promise<string[]>;
+  /** How many original files are stored and their total size. */
+  attachmentSummary(): Promise<AttachmentSummary>;
+  /** Tells subscribers the data changed outside this repository (an import). Writes nothing. */
+  invalidate(): void;
   subscribe(listener: Listener): () => void;
 }
 
@@ -107,19 +126,23 @@ export interface CustomAnalyteStore {
 export interface Settings {
   language: 'it';
   theme: 'nero' | 'carta' | 'auto';
-  unitSystem: 'conventional' | 'si';
+  unitSystem: UnitSystem;
   /** analyte ref string -> preferred display unit */
   preferredUnits: Record<string, string>;
   keepOriginalFile: boolean;
   disclaimerAcceptedAt: string | null;
   lastExportAt: string | null;
   dataChangedAt: string | null;
+  /** ISO timestamp until which the Home hides the backup reminder. Bound to this device. */
+  backupReminderSnoozedUntil: string | null;
 }
 
 export interface SettingsStore {
   get<K extends keyof Settings>(key: K): Promise<Settings[K]>;
   set<K extends keyof Settings>(key: K, value: Settings[K]): Promise<void>;
   subscribe(listener: Listener): () => void;
+  /** Tells subscribers the settings changed outside this store (an import). */
+  invalidate(): void;
 }
 
 export function normalizeLab(lab: string): string {

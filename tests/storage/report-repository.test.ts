@@ -78,6 +78,14 @@ describe('saveReport', () => {
     await repo.saveReport(reportInput(), []);
     expect(listener).toHaveBeenCalledTimes(1);
   });
+
+  it('notifies subscribers on invalidate, without writing anything', async () => {
+    const listener = vi.fn();
+    repo.subscribe(listener);
+    repo.invalidate();
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(await db.settings.get('dataChangedAt')).toBeUndefined();
+  });
 });
 
 describe('updateReport and deleteReport', () => {
@@ -365,5 +373,47 @@ describe('listLatestPerAnalyte', () => {
 
   it('is empty without data', async () => {
     expect(await repo.listLatestPerAnalyte()).toEqual([]);
+  });
+});
+
+describe('attachmentSummary', () => {
+  it('counts the stored original files and their bytes', async () => {
+    expect(await repo.attachmentSummary()).toEqual({ count: 0, bytes: 0 });
+    await repo.saveReport(
+      reportInput(),
+      [],
+      [
+        { data: new Uint8Array([9, 8, 7]).buffer, mimeType: 'application/pdf', fileName: 'a.pdf' },
+        { data: new ArrayBuffer(4), mimeType: 'image/png', fileName: 'b.png' },
+      ],
+    );
+    expect(await repo.attachmentSummary()).toEqual({ count: 2, bytes: 7 });
+  });
+});
+
+describe('listReportSummaries', () => {
+  it('counts the values that cannot be evaluated', async () => {
+    await repo.saveReport(reportInput(), [
+      measurementInput(), // TSH 5,07 over 4,20: out of range
+      measurementInput({
+        analyteId: 'ft4',
+        value: 1.4,
+        valueText: '1,40',
+        unit: 'ng/dL',
+        refMin: 0.93,
+        refMax: 1.7,
+      }),
+      measurementInput({
+        analyteId: 'glucose',
+        value: 90,
+        valueText: '90',
+        unit: 'mg/dL',
+        refMin: null,
+        refMax: null,
+        refText: null,
+      }),
+    ]);
+    const [summary] = await repo.listReportSummaries();
+    expect(summary).toMatchObject({ total: 3, outOfRange: 1, notEvaluable: 1 });
   });
 });

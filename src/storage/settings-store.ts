@@ -5,12 +5,13 @@ import type { Settings, SettingsStore } from './types';
 export const DEFAULT_SETTINGS: Settings = {
   language: 'it',
   theme: 'nero',
-  unitSystem: 'conventional',
+  unitSystem: 'printed',
   preferredUnits: {},
   keepOriginalFile: false,
   disclaimerAcceptedAt: null,
   lastExportAt: null,
   dataChangedAt: null,
+  backupReminderSnoozedUntil: null,
 };
 
 export function createSettingsStore(db: BloodioDb): SettingsStore {
@@ -25,5 +26,6 @@ export function createSettingsStore(db: BloodioDb): SettingsStore {
       emitter.emit();
     },
     subscribe: emitter.subscribe,
+    invalidate: () => emitter.emit(),
   };
 }

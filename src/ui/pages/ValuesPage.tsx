@@ -1,53 +1,12 @@
 import { useCallback, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import { formatRowValue, hasReference } from '../analyte/analyte-view';
-import { buildValueList, type ValueListItem } from '../analyte/value-list';
+import { buildValueList } from '../analyte/value-list';
 import { useServices } from '../app/services';
 import { useQuery } from '../app/use-query';
-import { Rail } from '../components/Rail';
-import { RangeFlag } from '../components/RangeFlag';
-import { formatDateShort, it } from '../i18n/it';
+import { ValueRow } from '../components/ValueRow';
+import { it } from '../i18n/it';
 import shared from '../styles/shared.module.css';
 import styles from './ValuesPage.module.css';
-
-function ValueRow({ item }: { item: ValueListItem }) {
-  const { row } = item;
-  return (
-    <Link to={item.path} className={styles.row}>
-      <span className={styles.name}>{item.name}</span>
-      <span className={styles.value}>
-        {formatRowValue(row)}
-        {row.value !== null && row.unit && (
-          <>
-            {' '}
-            <small>{row.unit}</small>
-          </>
-        )}
-      </span>
-      {row.value !== null && (
-        <div className={styles.rail}>
-          <Rail
-            value={row.value}
-            refMin={row.refMin}
-            refMax={row.refMax}
-            comparator={row.comparator}
-            watch={item.watch}
-          />
-        </div>
-      )}
-      <div className={styles.meta}>
-        <RangeFlag
-          outOfRange={row.outOfRange}
-          value={row.value}
-          refMin={row.refMin}
-          refMax={row.refMax}
-          hasReference={hasReference(row)}
-        />
-        <span className={styles.date}>{formatDateShort(row.sampleDate)}</span>
-      </div>
-    </Link>
-  );
-}
 
 /** Every entry measured at least once, by category, with its latest value and a search box. */
 export function ValuesPage() {
@@ -74,6 +33,7 @@ export function ValuesPage() {
         entries: await reports.listLatestPerAnalyte(),
         custom: await customAnalytes.list(),
         preferred: await settings.get('preferredUnits'),
+        system: await settings.get('unitSystem'),
       }),
       [reports, customAnalytes, settings],
     ),
@@ -83,7 +43,13 @@ export function ValuesPage() {
   const groups = useMemo(
     () =>
       loaded.status === 'ready'
-        ? buildValueList(loaded.data.entries, loaded.data.custom, loaded.data.preferred, query)
+        ? buildValueList(
+            loaded.data.entries,
+            loaded.data.custom,
+            loaded.data.preferred,
+            query,
+            loaded.data.system,
+          )
         : [],
     [loaded, query],
   );
@@ -137,7 +103,12 @@ export function ValuesPage() {
                 <ul className={styles.list}>
                   {group.items.map((item) => (
                     <li key={item.key}>
-                      <ValueRow item={item} />
+                      <ValueRow
+                        name={item.name}
+                        path={item.path}
+                        row={item.row}
+                        watch={item.watch}
+                      />
                     </li>
                   ))}
                 </ul>

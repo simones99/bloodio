@@ -1,13 +1,24 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { getAnalyte } from '../../domain/catalog';
+import { displayUnit } from '../../domain/series';
 import {
   analyteRefOf,
+  analyteRefToString,
   type Category,
   type CustomAnalyte,
   type Measurement,
+  type Report,
+  type UnitSystem,
 } from '../../domain/types';
-import { analytePath } from '../analyte/analyte-view';
+import {
+  analytePath,
+  formatRowRange,
+  formatRowValue,
+  hasReference,
+  rowInUnit,
+  type HistoryRow,
+} from '../analyte/analyte-view';
 import { Rail } from '../components/Rail';
 import { RangeFlag } from '../components/RangeFlag';
 import { useServices } from '../app/services';
@@ -22,16 +33,45 @@ interface Line {
   measurement: Measurement;
   name: string;
   category: Category;
+  /** The value in the display unit (spec 2026-10-08 §4.4); `exact` when shown as printed. */
+  row: HistoryRow;
 }
 
-function describe(measurement: Measurement, custom: CustomAnalyte[]): Line {
+interface DisplayPrefs {
+  preferred: Record<string, string>;
+  system: UnitSystem;
+}
+
+function describe(
+  measurement: Measurement,
+  custom: CustomAnalyte[],
+  report: Report,
+  prefs: DisplayPrefs,
+): Line {
   const analyte = measurement.analyteId ? getAnalyte(measurement.analyteId) : undefined;
   const own = custom.find((c) => c.id === measurement.customAnalyteId);
+  const ref = analyteRefOf(measurement);
+  const unit = displayUnit(analyte, measurement.unit, {
+    preferred: ref ? prefs.preferred[analyteRefToString(ref)] : undefined,
+    system: prefs.system,
+  });
+  const point = {
+    measurement,
+    reportId: report.id,
+    sampleDate: report.sampleDate,
+    lab: report.lab,
+  };
   return {
     measurement,
     name: analyte?.name ?? own?.name ?? '—',
     category: analyte?.category ?? own?.category ?? 'altro',
+    row: rowInUnit(point, analyte, unit),
   };
+}
+
+/** A converted row may show only a numeric range: a printed reference text is in the printed unit. */
+function numericRange(row: HistoryRow): boolean {
+  return row.refMin !== null || row.refMax !== null;
 }
 
 function valueLabel(m: Measurement): string {
@@ -98,23 +138,40 @@ export function ReportDetailPage() {
   const { id = '' } = useParams();
   const [search] = useSearchParams();
   const navigate = useNavigate();
-  const { reports, customAnalytes } = useServices();
+  const { reports, customAnalytes, settings } = useServices();
   const { setSession } = useImportSession();
   const [confirming, setConfirming] = useState(false);
 
+  const subscribe = useCallback(
+    (listener: () => void) => {
+      const offReports = reports.subscribe(listener);
+      const offSettings = settings.subscribe(listener);
+      return () => {
+        offReports();
+        offSettings();
+      };
+    },
+    [reports, settings],
+  );
   const loaded = useQuery(
     useCallback(
-      async () => ({ found: await reports.getReport(id), custom: await customAnalytes.list() }),
-      [reports, customAnalytes, id],
+      async () => ({
+        found: await reports.getReport(id),
+        custom: await customAnalytes.list(),
+        preferred: await settings.get('preferredUnits'),
+        system: await settings.get('unitSystem'),
+      }),
+      [reports, customAnalytes, settings, id],
     ),
-    reports.subscribe,
+    subscribe,
   );
 
   const groups = useMemo(() => {
     if (loaded.status !== 'ready' || !loaded.data.found) return [];
+    const { found, custom, preferred, system } = loaded.data;
     const byCategory = new Map<Category, Line[]>();
-    for (const measurement of loaded.data.found.measurements) {
-      const line = describe(measurement, loaded.data.custom);
+    for (const measurement of found.measurements) {
+      const line = describe(measurement, custom, found.report, { preferred, system });
       byCategory.set(line.category, [...(byCategory.get(line.category) ?? []), line]);
     }
     return [...byCategory.entries()];
@@ -180,7 +237,7 @@ export function ReportDetailPage() {
           <h2 id={`cat-${category}`} className={shared.sectionTitle}>
             {it.category[category]}
           </h2>
-          {lines.map(({ measurement: m, name }) => (
+          {lines.map(({ measurement: m, name, row }) => (
             <div key={m.id} className={styles.row}>
               {analyteRefOf(m) ? (
                 <Link to={analytePath(analyteRefOf(m)!)} className={styles.name}>
@@ -190,30 +247,42 @@ export function ReportDetailPage() {
                 <span className={styles.name}>{name}</span>
               )}
               <span className={styles.value}>
-                {valueLabel(m)}
-                {m.unit && <small>{m.unit}</small>}
+                {formatRowValue(row)}
+                {row.unit && <small>{row.unit}</small>}
               </span>
-              {m.value !== null && (
+              {row.value !== null && (
                 <div className={styles.rail}>
                   <Rail
-                    value={m.value}
-                    refMin={m.refMin}
-                    refMax={m.refMax}
-                    comparator={m.comparator}
+                    value={row.value}
+                    refMin={row.refMin}
+                    refMax={row.refMax}
+                    comparator={row.comparator}
                     animateIndex={justSaved ? railIndex++ : undefined}
                   />
                 </div>
               )}
               <div className={styles.meta}>
                 <RangeFlag
-                  outOfRange={m.outOfRange}
-                  value={m.value}
-                  refMin={m.refMin}
-                  refMax={m.refMax}
-                  hasReference={m.refText !== null || m.refMin !== null || m.refMax !== null}
+                  outOfRange={row.outOfRange}
+                  value={row.value}
+                  refMin={row.refMin}
+                  refMax={row.refMax}
+                  hasReference={hasReference(row)}
                 />
-                <span className={styles.ref}>{m.refText?.split('\n').join('; ')}</span>
+                <span className={styles.ref}>
+                  {row.exact
+                    ? m.refText?.split('\n').join('; ')
+                    : numericRange(row) && formatRowRange(row)}
+                </span>
               </div>
+              {!row.exact && (
+                <span className={styles.printed}>
+                  {it.detail.printedAs(
+                    [valueLabel(m), m.unit].filter(Boolean).join(' '),
+                    numericRange(row) ? undefined : m.refText?.split('\n').join('; '),
+                  )}
+                </span>
+              )}
             </div>
           ))}
         </section>

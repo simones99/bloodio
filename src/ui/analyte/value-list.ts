@@ -1,5 +1,10 @@
 import { getAnalyte } from '../../domain/catalog';
-import { analyteRefToString, type Category, type CustomAnalyte } from '../../domain/types';
+import {
+  analyteRefToString,
+  type Category,
+  type CustomAnalyte,
+  type UnitSystem,
+} from '../../domain/types';
 import type { AnalyteLatest } from '../../storage/types';
 import { it } from '../i18n/it';
 import { analytePath, buildAnalyteView, type HistoryRow } from './analyte-view';
@@ -33,11 +38,12 @@ export function buildValueList(
   custom: CustomAnalyte[],
   preferredUnits: Record<string, string>,
   query: string,
+  system: UnitSystem = 'printed',
 ): ValueGroup[] {
   const candidates = entries.flatMap((entry) => {
     const key = analyteRefToString(entry.ref);
     const points = entry.previous ? [entry.previous, entry.latest] : [entry.latest];
-    const view = buildAnalyteView(points, entry.ref, custom, preferredUnits[key]);
+    const view = buildAnalyteView(points, entry.ref, custom, preferredUnits[key], system);
     if (!view.latest) return [];
     const aliases = entry.ref.kind === 'catalog' ? (getAnalyte(entry.ref.id)?.aliases ?? []) : [];
     return [
@@ -49,7 +55,7 @@ export function buildValueList(
           name: view.name,
           path: analytePath(entry.ref),
           row: view.latest,
-          watch: view.watch,
+          watch: view.watch !== null,
         },
       },
     ];

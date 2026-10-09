@@ -368,4 +368,17 @@ describe('AnalytePage', () => {
     await user.click(screen.getByRole('link', { name: 'Apri il referto' }));
     expect(screen.getByText('dettaglio referto')).toBeInTheDocument();
   });
+
+  it('opens in the unit system chosen in the settings', async () => {
+    const services = await testServices();
+    await services.reports.saveReport(reportInput({ sampleDate: '2022-08-20' }), [
+      glucose(99, 'mg/dL', 70, 110),
+    ]);
+    await services.settings.set('unitSystem', 'si');
+    renderAt(['/analytes/glucose'], services);
+    expect(await screen.findByRole('button', { name: 'mmol/L' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+  });
 });

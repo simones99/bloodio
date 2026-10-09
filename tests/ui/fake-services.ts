@@ -13,6 +13,11 @@ export async function testServices(): Promise<Services> {
     customAnalytes: createCustomAnalyteStore(db),
     settings: createSettingsStore(db),
     backup: createBackupService(db),
+    storage: {
+      get: () => Promise.resolve({ persisted: null, usage: null }),
+      requestPersist: () => Promise.resolve(false),
+    },
+    restart: () => {},
     openPdf: () => Promise.reject(new Error('openPdf is not available in component tests')),
   };
 }

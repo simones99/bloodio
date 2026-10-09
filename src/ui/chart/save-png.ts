@@ -5,8 +5,9 @@ import {
   paintChartImage,
   type ChartImage,
 } from './paint-png';
+import { deliverFile, type DeliveryOutcome } from '../share/deliver-file';
 
-export type SaveOutcome = 'shared' | 'downloaded' | 'cancelled';
+export type SaveOutcome = DeliveryOutcome;
 
 /** "bloodio-tsh-2022-08-20.png": only [a-z0-9-] from the analyte ref, whatever it contains. */
 export function imageFileName(refKey: string, date: string): string {
@@ -36,42 +37,7 @@ export async function renderChartPng(image: ChartImage): Promise<Blob> {
   );
 }
 
-function canShareFile(file: File): boolean {
-  return (
-    typeof matchMedia === 'function' &&
-    matchMedia('(pointer: coarse)').matches &&
-    typeof navigator.canShare === 'function' &&
-    navigator.canShare({ files: [file] })
-  );
-}
-
-/**
- * Shares the image only where the primary pointer is touch (`pointer: coarse`) and the platform
- * accepts the file; desktop browsers also report canShare but a share sheet is the wrong UX
- * there, so they download. If the system refuses the share (NotAllowedError, e.g. iOS transient
- * activation lapsed during the async render) it falls back to a download.
- * Nothing leaves the device unless the user picks a destination in the share sheet.
- */
+/** Renders the chart image and hands it over (see deliverFile for share versus download). */
 export async function saveChartImage(image: ChartImage, fileName: string): Promise<SaveOutcome> {
-  const blob = await renderChartPng(image);
-  const file = new File([blob], fileName, { type: 'image/png' });
-  if (canShareFile(file)) {
-    try {
-      await navigator.share({ files: [file], title: image.title });
-      return 'shared';
-    } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') return 'cancelled';
-      if (!(error instanceof DOMException && error.name === 'NotAllowedError')) throw error;
-    }
-  }
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = fileName;
-  document.body.append(link);
-  link.click();
-  link.remove();
-  // Safari may show a download prompt; keep the URL valid until the user has had time to answer.
-  setTimeout(() => URL.revokeObjectURL(url), 40_000);
-  return 'downloaded';
+  return deliverFile(await renderChartPng(image), fileName, image.title);
 }

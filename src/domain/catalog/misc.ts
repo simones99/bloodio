@@ -19,6 +19,7 @@ export const inflammation: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'mg/L',
     units: [{ unit: 'mg/dL', toCanonical: 10 }],
+    siUnit: 'mg/L',
   },
   {
     id: 'procalcitonin',
@@ -84,6 +85,7 @@ export const coagulation: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'mg/dL',
     units: [{ unit: 'g/L', toCanonical: 100 }],
+    siUnit: 'g/L',
   },
   {
     id: 'd-dimer',
@@ -94,6 +96,7 @@ export const coagulation: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'ng/mL',
     units: [{ unit: 'µg/L', toCanonical: 1 }],
+    siUnit: 'µg/L',
     plausible: { min: 10, max: 100000 },
   },
 ];
@@ -119,6 +122,7 @@ export const proteins: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'g/dL',
     units: [{ unit: 'g/L', toCanonical: 0.1 }],
+    siUnit: 'g/L',
   },
   {
     id: 'albumin',
@@ -129,6 +133,7 @@ export const proteins: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'g/dL',
     units: [{ unit: 'g/L', toCanonical: 0.1 }],
+    siUnit: 'g/L',
   },
   fraction('albumin-pct', 'Albumina %', ['Albumina', 'Albumina %']),
   fraction('alpha1-pct', 'Alfa 1 globuline %', ['Alfa 1', 'Alfa 1 globuline', 'Alfa1 globuline']),
@@ -156,6 +161,7 @@ export const other: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'ng/mL',
     units: [{ unit: 'µg/L', toCanonical: 1 }],
+    siUnit: 'µg/L',
   },
   {
     id: 'psa-free',
@@ -166,6 +172,7 @@ export const other: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'ng/mL',
     units: [{ unit: 'µg/L', toCanonical: 1 }],
+    siUnit: 'µg/L',
   },
   {
     id: 'cpk',

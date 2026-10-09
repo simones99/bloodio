@@ -13,12 +13,12 @@
   padding-bottom: 24px;
 }
 
-/* Referti, +, Valori, Impostazioni. Home will make it five, with "+" in the middle. */
+/* Home, Referti, +, Valori, Impostazioni: "+" in the middle. */
 .tabs {
   display: grid;
-  grid-template-columns: 1fr 72px 1fr 1fr;
+  grid-template-columns: 1fr 1fr 72px 1fr 1fr;
   align-items: center;
-  padding: 8px 8px calc(10px + env(safe-area-inset-bottom));
+  padding: 8px 4px calc(10px + env(safe-area-inset-bottom));
   border-top: 1px solid var(--filetto);
   background: var(--nero);
 }
@@ -29,8 +29,9 @@
   align-items: center;
   justify-content: center;
   gap: 3px;
+  min-width: 0;
   min-height: var(--tap);
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--cenere);
   text-decoration: none;
 }

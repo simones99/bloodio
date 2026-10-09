@@ -19,6 +19,12 @@ export function Layout() {
         <Outlet />
       </main>
       <nav className={styles.tabs} aria-label={it.nav.main}>
+        <NavLink to="/" end className={styles.tab}>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 11 12 4l8 7v9H4z" />
+          </svg>
+          {it.nav.home}
+        </NavLink>
         <NavLink to="/reports" className={styles.tab}>
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M7 3h10v18H7zM10 8h4M10 12h4M10 16h2" />

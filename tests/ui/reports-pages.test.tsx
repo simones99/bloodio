@@ -210,4 +210,84 @@ describe('ReportDetailPage', () => {
     await userEvent.setup().click(await screen.findByRole('button', { name: 'Modifica referto' }));
     expect(await screen.findByText(`modifica: ${id}, 3 valori`)).toBeInTheDocument();
   });
+
+  it('shows values in the chosen unit system with the printed value beside them', async () => {
+    const services = await testServices();
+    const id = await services.reports.saveReport(reportInput(), [
+      measurementInput({
+        analyteId: 'glucose',
+        value: 99,
+        valueText: '99',
+        unit: 'mg/dL',
+        refMin: 70,
+        refMax: 110,
+        refText: 'da 70 a 110',
+      }),
+    ]);
+    await services.settings.set('unitSystem', 'si');
+    renderAt(`/reports/${id}`, services);
+    expect(await screen.findByText('5,5')).toBeInTheDocument();
+    expect(screen.getByText('mmol/L')).toBeInTheDocument();
+    expect(screen.getByText('3,89 – 6,11')).toBeInTheDocument();
+    expect(screen.getByText('sul referto: 99 mg/dL')).toBeInTheDocument();
+  });
+
+  it('shows values as printed by default, without the printed line', async () => {
+    const services = await testServices();
+    const id = await services.reports.saveReport(reportInput(), [
+      measurementInput({
+        analyteId: 'glucose',
+        value: 99,
+        valueText: '99',
+        unit: 'mg/dL',
+        refMin: 70,
+        refMax: 110,
+        refText: 'da 70 a 110',
+      }),
+    ]);
+    renderAt(`/reports/${id}`, services);
+    expect(await screen.findByText('99')).toBeInTheDocument();
+    expect(screen.getByText('da 70 a 110')).toBeInTheDocument();
+    expect(screen.queryByText(/sul referto/)).not.toBeInTheDocument();
+  });
+
+  it('moves a printed reference text without numbers into the printed line', async () => {
+    const services = await testServices();
+    const id = await services.reports.saveReport(reportInput(), [
+      measurementInput({
+        analyteId: 'glucose',
+        value: 99,
+        valueText: '99',
+        unit: 'mg/dL',
+        refMin: null,
+        refMax: null,
+        refText: 'Desiderabile < 100\nElevato > 125',
+      }),
+    ]);
+    await services.settings.set('unitSystem', 'si');
+    renderAt(`/reports/${id}`, services);
+    expect(
+      await screen.findByText('sul referto: 99 mg/dL, range Desiderabile < 100; Elevato > 125'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText('Desiderabile < 100; Elevato > 125')).not.toBeInTheDocument();
+  });
+
+  it('follows a per-entry unit preference', async () => {
+    const services = await testServices();
+    const id = await services.reports.saveReport(reportInput(), [
+      measurementInput({
+        analyteId: 'glucose',
+        value: 99,
+        valueText: '99',
+        unit: 'mg/dL',
+        refMin: 70,
+        refMax: 110,
+        refText: 'da 70 a 110',
+      }),
+    ]);
+    await services.settings.set('preferredUnits', { glucose: 'mmol/L' });
+    renderAt(`/reports/${id}`, services);
+    expect(await screen.findByText('5,5')).toBeInTheDocument();
+    expect(screen.getByText('sul referto: 99 mg/dL')).toBeInTheDocument();
+  });
 });

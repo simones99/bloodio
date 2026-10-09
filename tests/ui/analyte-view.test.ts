@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { getAnalyte } from '../../src/domain/catalog';
 import type { CustomAnalyte, Measurement } from '../../src/domain/types';
 import type { SeriesPoint } from '../../src/storage/types';
 import {
@@ -6,6 +7,7 @@ import {
   buildAnalyteView,
   formatRowRange,
   formatRowValue,
+  rowInUnit,
 } from '../../src/ui/analyte/analyte-view';
 
 let counter = 0;
@@ -105,6 +107,14 @@ describe('buildAnalyteView', () => {
     expect(inMmol.rows[1]).toMatchObject({ converted: true, exact: true });
   });
 
+  it('shows the unit system the user chose when no unit was picked for the entry', () => {
+    const history = [glucose('2022-08-20', 99, 'mg/dL', [70, 110])];
+    const view = buildAnalyteView(history, GLUCOSE, [], undefined, 'si');
+    expect(view.unit).toBe('mmol/L');
+    expect(formatRowValue(view.latest!)).toBe('5,5');
+    expect(buildAnalyteView(history, GLUCOSE, [], 'mg/dL', 'si').unit).toBe('mg/dL');
+  });
+
   it('ignores a preferred unit that this analyte cannot be shown in', () => {
     const view = buildAnalyteView(
       [glucose('2022-08-20', 99, 'mg/dL', [70, 110])],
@@ -136,7 +146,7 @@ describe('buildAnalyteView', () => {
     ];
     const view = buildAnalyteView(points, GLUCOSE, [], 'mg/dL');
     expect(view.latest).toMatchObject({ sampleDate: '2022-08-20', unit: 'g/L', converted: false });
-    expect(view.watch).toBe(false);
+    expect(view.watch).toBeNull();
   });
 
   it('handles a qualitative analyte: text in the header, nothing to plot, no units', () => {
@@ -184,8 +194,8 @@ describe('buildAnalyteView', () => {
       at('2025-01-01', { value: 3.0, outOfRange: false }),
       at('2025-06-01', { value: 4.0, outOfRange: false }),
     ];
-    expect(buildAnalyteView(rising, TSH, []).watch).toBe(true);
-    expect(buildAnalyteView(history, TSH, []).watch).toBe(false);
+    expect(buildAnalyteView(rising, TSH, []).watch).toBe('upper');
+    expect(buildAnalyteView(history, TSH, []).watch).toBeNull();
   });
 
   it('is empty, not broken, for a ref without data', () => {
@@ -275,5 +285,25 @@ describe('row formatting', () => {
     expect(view.unitOptions).toContain('mg/100mL');
     expect(view.unitOptions).toContain('mg/dL');
     expect(view.unitOptions.indexOf('mg/dL')).toBeLessThan(view.unitOptions.indexOf('mg/100mL'));
+  });
+});
+
+describe('rowInUnit', () => {
+  it('converts one value and its range together, or keeps it as printed', () => {
+    const point = glucose('2022-08-20', 99, 'mg/dL', [70, 110]);
+    const row = rowInUnit(point, getAnalyte('glucose'), 'mmol/L');
+    expect(row).toMatchObject({ unit: 'mmol/L', converted: true, exact: false });
+    expect(formatRowValue(row)).toBe('5,5');
+    expect(formatRowRange(row)).toBe('3,89 – 6,11');
+    expect(rowInUnit(point, getAnalyte('glucose'), 'mg/dL')).toMatchObject({
+      value: 99,
+      exact: true,
+    });
+    expect(rowInUnit(point, undefined, 'mmol/L')).toMatchObject({
+      value: 99,
+      unit: 'mg/dL',
+      converted: false,
+      exact: true,
+    });
   });
 });

@@ -75,15 +75,23 @@ describe('base64', () => {
 });
 
 describe('exportAll', () => {
-  it('writes the versioned envelope and records the export time', async () => {
+  it('writes the versioned envelope and leaves recording the export to the caller', async () => {
     await seed(db);
     const file = await backup.exportAll();
     expect(file).toMatchObject({ app: 'bloodio', version: EXPORT_VERSION, appVersion: '0.1.0' });
     expect(file.data.reports).toHaveLength(2);
     expect(file.data.measurements).toHaveLength(3);
     expect(file.data.preferredUnits).toEqual({ glucose: 'mmol/L' });
+    expect(file.data.unitSystem).toBe('printed');
     expect(file.data.attachments).toEqual([]);
-    expect((await db.settings.get('lastExportAt'))?.value).toBe(file.exportedAt);
+    expect(await db.settings.get('lastExportAt')).toBeUndefined();
+  });
+
+  it('writes "printed" when the stored unit system is not a known one', async () => {
+    await db.settings.put({ key: 'unitSystem', value: 'imperial' });
+    expect((await backup.exportAll()).data.unitSystem).toBe('printed');
+    await db.settings.put({ key: 'unitSystem', value: 'si' });
+    expect((await backup.exportAll()).data.unitSystem).toBe('si');
   });
 
   it('includes attachments only on request', async () => {
@@ -130,6 +138,16 @@ describe('previewImport', () => {
     });
     const empty = await freshDb();
     expect((await createBackupService(empty).previewImport(json)).duplicates).toBe(0);
+  });
+
+  it('counts the original files the file carries', async () => {
+    await seed(db);
+    const without = JSON.parse(JSON.stringify(await backup.exportAll())) as unknown;
+    expect((await backup.previewImport(without)).attachments).toBe(0);
+    const withFiles = JSON.parse(
+      JSON.stringify(await backup.exportAll({ includeAttachments: true })),
+    ) as unknown;
+    expect((await backup.previewImport(withFiles)).attachments).toBe(1);
   });
 
   it('rejects files from a newer app', async () => {
@@ -297,7 +315,71 @@ describe('frozen export formats', () => {
       measurements: 3,
     });
     expect(await backup.applyImport(json, 'replace')).toEqual({ added: 2, skipped: 0 });
+    expect(await db.settings.get('unitSystem')).toBeUndefined();
     const tsh = await createReportRepository(db).listSeries({ kind: 'catalog', id: 'tsh' });
     expect(tsh.map((p) => p.measurement.value)).toEqual([5.48, 5.31]);
+  });
+});
+
+describe('unit system', () => {
+  it('travels in the file: replace applies it, merge keeps the local one', async () => {
+    const deviceA = await freshDb();
+    await seed(deviceA);
+    await deviceA.settings.put({ key: 'unitSystem', value: 'si' });
+    const json = JSON.parse(
+      JSON.stringify(await createBackupService(deviceA).exportAll()),
+    ) as unknown;
+
+    await db.settings.put({ key: 'unitSystem', value: 'conventional' });
+    await backup.applyImport(json, 'merge');
+    expect((await db.settings.get('unitSystem'))?.value).toBe('conventional');
+    await backup.applyImport(json, 'replace');
+    expect((await db.settings.get('unitSystem'))?.value).toBe('si');
+  });
+});
+
+describe('applyImport merge: safety', () => {
+  it('is idempotent: the same file twice adds nothing the second time', async () => {
+    const deviceA = await freshDb();
+    await seed(deviceA);
+    const json = JSON.parse(
+      JSON.stringify(await createBackupService(deviceA).exportAll()),
+    ) as unknown;
+    expect(await backup.applyImport(json, 'merge')).toEqual({ added: 2, skipped: 0 });
+    const before = await snapshot(db);
+    expect(await backup.applyImport(json, 'merge')).toEqual({ added: 0, skipped: 2 });
+    expect(await snapshot(db)).toEqual(before);
+  });
+
+  it('changes nothing when a merge fails half way', async () => {
+    const deviceA = await freshDb();
+    await seed(deviceA);
+    const json = JSON.parse(
+      JSON.stringify(await createBackupService(deviceA).exportAll()),
+    ) as unknown;
+    await createReportRepository(db).saveReport(reportInput({ sampleDate: '2024-01-01' }), [
+      measurementInput(),
+    ]);
+    const before = await snapshot(db);
+    vi.spyOn(db.measurements, 'bulkAdd').mockRejectedValueOnce(new Error('boom'));
+    await expect(backup.applyImport(json, 'merge')).rejects.toThrow('boom');
+    expect(await snapshot(db)).toEqual(before);
+  });
+});
+
+describe('wipeAll', () => {
+  it('succeeds once the data are deleted, even if reopening the database fails', async () => {
+    await seed(db);
+    vi.spyOn(db, 'open').mockRejectedValueOnce(new Error('blocked'));
+    await expect(backup.wipeAll()).resolves.toBeUndefined();
+    await db.open();
+    expect(await db.reports.count()).toBe(0);
+  });
+
+  it('rejects when the data could not be deleted', async () => {
+    await seed(db);
+    vi.spyOn(db, 'delete').mockRejectedValueOnce(new Error('blocked'));
+    await expect(backup.wipeAll()).rejects.toThrow('blocked');
+    expect(await db.reports.count()).toBe(2);
   });
 });

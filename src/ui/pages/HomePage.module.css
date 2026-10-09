@@ -1,0 +1,138 @@
+/* The slab is the page's only red interface element, the same with zero or ten values out of range. */
+.slab {
+  display: flex;
+  flex-direction: column;
+  padding: calc(40px + env(safe-area-inset-top)) var(--gutter) 28px;
+  background: var(--arterioso);
+  color: #000;
+  text-decoration: none;
+}
+
+.slab:active {
+  background: var(--venoso);
+  color: #fff;
+}
+
+.brand {
+  font-size: 22px;
+}
+
+.date {
+  margin-top: 44px;
+  font-size: 52px;
+}
+
+.lab {
+  margin-top: 14px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.summary {
+  margin-top: 4px;
+  max-width: 18em;
+  font-size: 19px;
+  font-weight: 450;
+  line-height: 1.3;
+}
+
+.reminder {
+  margin: 20px var(--gutter) 0;
+  padding: 16px;
+  border-radius: var(--radius-field);
+  background: var(--grafite);
+}
+
+.reminderText {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.busy[aria-disabled='true'] {
+  opacity: 0.5;
+}
+
+.note {
+  margin-top: 12px;
+  font-size: 14px;
+  color: var(--cenere);
+}
+
+.note a {
+  color: var(--testo);
+}
+
+.failed {
+  margin-top: 12px;
+  padding-left: 12px;
+  border-left: 3px solid var(--arterioso);
+  font-size: 15px;
+}
+
+.hint {
+  margin-top: -4px;
+  padding: 0 var(--gutter) 8px;
+  font-size: 13px;
+  color: var(--cenere);
+}
+
+.subTitle {
+  padding: 16px var(--gutter) 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cenere);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.more {
+  display: flex;
+  align-items: center;
+  min-height: var(--tap);
+  padding: 0 var(--gutter);
+  border-top: 1px solid var(--filetto);
+  font-size: 14px;
+  color: var(--cenere);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--binario);
+}
+
+.reportRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 14px var(--gutter);
+  border-top: 1px solid var(--filetto);
+  text-decoration: none;
+}
+
+.reportDate {
+  font-size: 21px;
+}
+
+.reportMeta {
+  font-size: 14px;
+  color: var(--cenere);
+  text-align: right;
+  font-stretch: var(--dense-stretch);
+}
+
+.cta {
+  display: inline-grid;
+  place-items: center;
+  text-decoration: none;
+}

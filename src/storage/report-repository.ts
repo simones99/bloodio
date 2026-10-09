@@ -174,14 +174,18 @@ export function createReportRepository(db: BloodioDb): ReportRepository {
       return Promise.all(
         reports.map(async (report) => {
           const byReport = db.measurements.where('reportId').equals(report.id);
-          const [total, outOfRange] = await Promise.all([
+          const [total, outOfRange, notEvaluable] = await Promise.all([
             byReport.count(),
             byReport
               .clone()
               .filter((m) => m.outOfRange === true)
               .count(),
+            byReport
+              .clone()
+              .filter((m) => m.outOfRange === null)
+              .count(),
           ]);
-          return { report, total, outOfRange };
+          return { report, total, outOfRange, notEvaluable };
         }),
       );
     },
@@ -218,6 +222,17 @@ export function createReportRepository(db: BloodioDb): ReportRepository {
       return labs.map(String).filter((lab) => lab !== '');
     },
 
+    async attachmentSummary() {
+      let count = 0;
+      let bytes = 0;
+      await db.attachments.each((attachment) => {
+        count++;
+        bytes += attachment.size;
+      });
+      return { count, bytes };
+    },
+
     subscribe: emitter.subscribe,
+    invalidate: () => emitter.emit(),
   };
 }

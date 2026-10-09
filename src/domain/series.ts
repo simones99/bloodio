@@ -1,5 +1,5 @@
 import type { TrendPoint } from './trend';
-import type { Analyte, Comparator, Measurement } from './types';
+import type { Analyte, Comparator, Measurement, UnitSystem } from './types';
 import { normalizeUnit, toCanonicalFactor } from './units';
 
 /** A numeric measurement expressed in the unit chosen for display. Value and range share one factor. */
@@ -76,14 +76,32 @@ export function trendPoints<T>(converted: ConvertedPoint<T>[]): TrendPoint[] {
     .map(({ value, refMin, refMax }) => ({ value, refMin, refMax }));
 }
 
-/** The unit to show by default: the user's preference when convertible, else the latest printed unit. */
-export function defaultDisplayUnit(
+/**
+ * The unit a value is shown in (spec 2026-10-08 §4.3): the user's choice for this entry when
+ * convertible, else the chosen unit system when the printed unit converts to it, else as printed.
+ * Custom analytes (no catalog entry) and analytes without a conventional/SI pair (no `siUnit`)
+ * always stay as printed.
+ */
+export function displayUnit(
   analyte: Analyte | undefined,
-  latestPrintedUnit: string | null,
-  preferred?: string,
+  printedUnit: string | null,
+  options: { preferred?: string; system: UnitSystem },
 ): string | null {
-  if (preferred !== undefined && analyte && toCanonicalFactor(analyte, preferred) !== null) {
-    return normalizeUnit(preferred);
+  const printed = printedUnit === null ? null : normalizeUnit(printedUnit);
+  if (!analyte) return printed;
+  if (options.preferred !== undefined && toCanonicalFactor(analyte, options.preferred) !== null) {
+    return normalizeUnit(options.preferred);
   }
-  return latestPrintedUnit === null ? null : normalizeUnit(latestPrintedUnit);
+  const target =
+    analyte.siUnit === undefined
+      ? undefined
+      : options.system === 'conventional'
+        ? analyte.canonicalUnit
+        : options.system === 'si'
+          ? analyte.siUnit
+          : undefined;
+  if (target !== undefined && printed !== null && toCanonicalFactor(analyte, printed) !== null) {
+    return target;
+  }
+  return printed;
 }

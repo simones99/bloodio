@@ -1,9 +1,13 @@
 import { normalizeName } from '../../domain/normalize';
+import { UNIT_SYSTEMS } from '../../domain/types';
 import { APP_VERSION } from '../../version';
 import { defaultProfile, type AttachmentRecord, type BloodioDb } from '../db';
 import { normalizeLab } from '../types';
 import { arrayBufferToBase64, base64ToArrayBuffer } from './base64';
+import { ImportError } from './errors';
 import { currentExportFile, EXPORT_VERSION, type ExportFile } from './schema';
+
+export { ImportError };
 
 export type ImportMode = 'replace' | 'merge';
 
@@ -16,6 +20,8 @@ export interface ImportPreview {
   exportedAt: string;
   reports: number;
   measurements: number;
+  /** Original files carried by the file. */
+  attachments: number;
   /** Earliest and latest sample date, null when the file has no reports. */
   from: string | null;
   to: string | null;
@@ -27,16 +33,6 @@ export interface ImportPreview {
 export interface ImportResult {
   added: number;
   skipped: number;
-}
-
-export class ImportError extends Error {
-  constructor(
-    readonly code: 'invalid' | 'too-new',
-    readonly issues: string[],
-  ) {
-    super(code === 'too-new' ? 'Export created by a newer app version' : 'Invalid export file');
-    this.name = 'ImportError';
-  }
 }
 
 export interface BackupService {
@@ -123,6 +119,9 @@ export function createBackupService(db: BloodioDb): BackupService {
           )
         : [];
       const preferred = (await db.settings.get('preferredUnits'))?.value;
+      const storedSystem = (await db.settings.get('unitSystem'))?.value;
+      // An unknown stored value would make the file fail its own schema on import.
+      const unitSystem = UNIT_SYSTEMS.find((system) => system === storedSystem) ?? 'printed';
       const file: ExportFile = {
         app: 'bloodio',
         version: EXPORT_VERSION,
@@ -134,6 +133,7 @@ export function createBackupService(db: BloodioDb): BackupService {
           measurements: await db.measurements.toArray(),
           customAnalytes: await db.customAnalytes.toArray(),
           preferredUnits: (preferred as Record<string, string> | undefined) ?? {},
+          unitSystem,
           attachments: attachments.map((a) => ({
             reportId: a.reportId,
             mimeType: a.mimeType,
@@ -142,7 +142,6 @@ export function createBackupService(db: BloodioDb): BackupService {
           })),
         },
       };
-      await db.settings.put({ key: 'lastExportAt', value: exportedAt });
       return file;
     },
 
@@ -155,6 +154,7 @@ export function createBackupService(db: BloodioDb): BackupService {
         exportedAt: file.exportedAt,
         reports: file.data.reports.length,
         measurements: file.data.measurements.length,
+        attachments: file.data.attachments.length,
         from: dates[0] ?? null,
         to: dates[dates.length - 1] ?? null,
         labs: [...new Set(file.data.reports.map((r) => r.lab))].sort(),
@@ -197,6 +197,7 @@ export function createBackupService(db: BloodioDb): BackupService {
           await db.customAnalytes.bulkAdd(data.customAnalytes);
           await db.attachments.bulkAdd(attachments);
           await db.settings.put({ key: 'preferredUnits', value: data.preferredUnits });
+          if (data.unitSystem) await db.settings.put({ key: 'unitSystem', value: data.unitSystem });
           await db.settings.put({ key: 'dataChangedAt', value: now });
         });
         return { added: data.reports.length, skipped: 0 };
@@ -251,7 +252,11 @@ export function createBackupService(db: BloodioDb): BackupService {
 
     async wipeAll() {
       await db.delete();
-      await db.open(); // recreates the schema and the default profile
+      try {
+        await db.open(); // recreates the schema and the default profile
+      } catch {
+        // The data are gone, which is what was asked: the restart reopens the database.
+      }
     },
   };
 }

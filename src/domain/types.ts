@@ -43,6 +43,11 @@ export interface Analyte {
   /** Other units this analyte can be printed in, excluding the canonical one. */
   units?: UnitFactor[];
   /**
+   * The SI unit, when the analyte has a conventional/SI pair: canonicalUnit or one of `units`.
+   * Absent where the distinction means nothing (eGFR), so "SI" falls back to the printed unit.
+   */
+  siUnit?: string;
+  /**
    * Physically plausible values in canonical unit. Used only to disambiguate "1.029" vs "1029".
    * Covers every value a lab can report (spec 2026-10-21 §4): a narrower range picks a wrong
    * reading silently.
@@ -55,6 +60,10 @@ export type ReportType = 'sangue' | 'urine' | 'misto' | 'altro';
 export type ReportSource = 'parser' | 'ocr' | 'manuale';
 /** null = cannot be evaluated ("non valutabile"). Never treat null as in range. */
 export type OutOfRange = boolean | null;
+
+/** How values are shown when a report printed another unit (spec 2026-10-08 §4.2). */
+export const UNIT_SYSTEMS = ['printed', 'conventional', 'si'] as const;
+export type UnitSystem = (typeof UNIT_SYSTEMS)[number];
 
 export interface Report {
   id: string;

@@ -1,18 +1,15 @@
 import { getAnalyte } from '../../domain/catalog';
-import {
-  defaultDisplayUnit,
-  toSeries,
-  trendPoints,
-  type ConvertedPoint,
-} from '../../domain/series';
-import { watchSide } from '../../domain/trend';
+import { displayUnit, toSeries, trendPoints, type ConvertedPoint } from '../../domain/series';
+import { watchSide, type WatchSide } from '../../domain/trend';
 import {
   analyteRefToString,
+  type Analyte,
   type AnalyteRef,
   type Category,
   type Comparator,
   type CustomAnalyte,
   type OutOfRange,
+  type UnitSystem,
 } from '../../domain/types';
 import { normalizeUnit, unitsOf } from '../../domain/units';
 import type { SeriesPoint } from '../../storage/types';
@@ -62,8 +59,8 @@ export interface AnalyteView {
   pointDetails: Record<string, PointDetail>;
   /** Numeric values whose printed unit cannot be converted to `unit`. */
   excludedCount: number;
-  /** The latest value is close to a printed limit and moving towards it. */
-  watch: boolean;
+  /** The side of the printed range the latest value is close to and moving towards, if any. */
+  watch: WatchSide | null;
   /** The chart's text alternative; null when there is no chart. */
   summary: string | null;
   /** Subtitle and date of the exported image; null when there is no chart. */
@@ -112,6 +109,15 @@ function toRow(
     converted: false,
     exact: true,
   };
+}
+
+/** One measurement in `unit`, value and range converted together; as printed when it cannot be. */
+export function rowInUnit(
+  point: SeriesPoint,
+  analyte: Analyte | undefined,
+  unit: string | null,
+): HistoryRow {
+  return toRow(point, toSeries([point], analyte, unit).converted[0], unit);
 }
 
 const formatFor = (row: HistoryRow, value: number) =>
@@ -182,6 +188,7 @@ export function buildAnalyteView(
   ref: AnalyteRef,
   custom: CustomAnalyte[],
   preferredUnit?: string,
+  system: UnitSystem = 'printed',
 ): AnalyteView {
   const analyte = ref.kind === 'catalog' ? getAnalyte(ref.id) : undefined;
   const own = ref.kind === 'custom' ? custom.find((c) => c.id === ref.id) : undefined;
@@ -190,7 +197,10 @@ export function buildAnalyteView(
   // Stable sort: two reports on the same day keep the order the repository gave them.
   const sorted = [...points].sort((a, b) => a.sampleDate.localeCompare(b.sampleDate));
   const latestNumeric = [...sorted].reverse().find((p) => p.measurement.value !== null);
-  const unit = defaultDisplayUnit(analyte, latestNumeric?.measurement.unit ?? null, preferredUnit);
+  const unit = displayUnit(analyte, latestNumeric?.measurement.unit ?? null, {
+    preferred: preferredUnit,
+    system,
+  });
 
   const series = toSeries(sorted, analyte, unit);
   const convertedById = new Map(series.converted.map((c) => [c.source.measurement.id, c]));
@@ -260,9 +270,9 @@ export function buildAnalyteView(
     pointDetails: Object.fromEntries(plotted.map((row) => [row.key, pointDetail(row)])),
     excludedCount: series.unconvertible.length,
     watch:
-      latest?.converted === true &&
-      latest.comparator === null &&
-      watchSide(trendPoints(series.converted)) !== null,
+      latest?.converted === true && latest.comparator === null
+        ? watchSide(trendPoints(series.converted))
+        : null,
     summary,
     image,
   };

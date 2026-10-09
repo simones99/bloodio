@@ -39,3 +39,25 @@ export function watchSide(points: TrendPoint[]): WatchSide | null {
   }
   return null;
 }
+
+/**
+ * How far a value is from the nearest printed limit, as a share of the range: of its span when
+ * the range has two sides, of the limit itself when it has one. Inside or outside the range alike.
+ * Null when there is no range to measure against. Used only to order lists.
+ */
+export function limitDistance(
+  value: number,
+  refMin: number | null,
+  refMax: number | null,
+): number | null {
+  if (refMin !== null && refMax !== null) {
+    if (refMax <= refMin) return null;
+    const span = refMax - refMin;
+    if (value > refMax) return (value - refMax) / span;
+    if (value < refMin) return (refMin - value) / span;
+    return Math.min(refMax - value, value - refMin) / span;
+  }
+  const limit = refMax ?? refMin;
+  if (limit === null || limit <= 0) return null;
+  return Math.abs(value - limit) / limit;
+}

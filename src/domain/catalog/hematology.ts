@@ -25,6 +25,7 @@ const abs = (id: string, name: string, aliases: string[]): Analyte => ({
   kind: 'numeric',
   canonicalUnit: '/µL',
   units: COUNT_UNITS,
+  siUnit: '10^9/L',
   plausible: { min: 0, max: 440000 },
 });
 
@@ -41,6 +42,7 @@ export const hematology: Analyte[] = [
       { unit: '10^6/µL', toCanonical: 1e6 },
       { unit: '10^12/L', toCanonical: 1e6 },
     ],
+    siUnit: '10^12/L',
     plausible: { min: 1e4, max: 1e7 },
   },
   {
@@ -52,6 +54,7 @@ export const hematology: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'g/dL',
     units: [{ unit: 'g/L', toCanonical: 0.1 }],
+    siUnit: 'g/L',
     plausible: { min: 0.1, max: 26 },
   },
   {
@@ -93,6 +96,7 @@ export const hematology: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'g/dL',
     units: [{ unit: 'g/L', toCanonical: 0.1 }],
+    siUnit: 'g/L',
     plausible: { min: 25, max: 40 },
   },
   {
@@ -114,6 +118,7 @@ export const hematology: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: '/µL',
     units: COUNT_UNITS,
+    siUnit: '10^9/L',
     plausible: { min: 2000, max: 5000000 },
   },
   {
@@ -135,6 +140,7 @@ export const hematology: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: '/µL',
     units: COUNT_UNITS,
+    siUnit: '10^9/L',
     plausible: { min: 30, max: 440000 },
   },
   pct('neutrophils-pct', 'Neutrofili %', ['Neutrofili', 'Neutrofili %', 'Granulociti neutrofili']),

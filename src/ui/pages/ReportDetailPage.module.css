@@ -54,6 +54,14 @@ a.name {
   text-align: right;
 }
 
+.printed {
+  grid-column: 1 / -1;
+  text-align: right;
+  font-size: 13px;
+  color: var(--cenere);
+  font-stretch: var(--dense-stretch);
+}
+
 .notes {
   padding: 0 var(--gutter);
   white-space: pre-wrap;
