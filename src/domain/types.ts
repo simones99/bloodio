@@ -42,7 +42,11 @@ export interface Analyte {
   canonicalUnit?: string;
   /** Other units this analyte can be printed in, excluding the canonical one. */
   units?: UnitFactor[];
-  /** Physically plausible values in canonical unit. Used only to disambiguate "1.029" vs "1029". */
+  /**
+   * Physically plausible values in canonical unit. Used only to disambiguate "1.029" vs "1029".
+   * Covers every value a lab can report (spec 2026-10-21 §4): a narrower range picks a wrong
+   * reading silently.
+   */
   plausible?: PlausibleRange;
 }
 

@@ -158,7 +158,7 @@ Contenuto: tutti gli analiti dei referti di esempio, il pannello comune (HDL, LD
 ### Numeri
 
 - La virgola è sempre decimale.
-- Una stringa della forma `\d{1,3}(\.\d{3})+` è ambigua: si calcolano entrambe le letture e si tiene quella dentro `plausible`, con verifica incrociata sul range stampato letto con la stessa regola. Se entrambe o nessuna sono plausibili, o l'analita è sconosciuto: lettura "migliaia" più flag `ambiguous-number`.
+- Una stringa della forma `[1-9]\d{0,2}(\.\d{3})+` è ambigua (con lo zero davanti il punto è decimale): si calcolano entrambe le letture. I decimali si tengono solo se `plausible` esclude le migliaia e il range stampato non le indica; le migliaia se `plausible` o il range stampato le indicano e l'altro non dice il contrario. In ogni altro caso, anche con la voce sconosciuta: lettura "migliaia" più flag `ambiguous-number`. Aggiornamento 2026-10-21: regola e motivi in `docs/specs/2026-10-21-dot-reading-design.md`.
 - `<9` diventa `{ value: 9, comparator: '<', valueText: '<9' }`.
 - I qualitativi hanno `value: null` e `valueText` grezzo.
 

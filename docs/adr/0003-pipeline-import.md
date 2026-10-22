@@ -13,7 +13,7 @@ I referti arrivano come PDF testuali, PDF senza livello testo, immagini e foto. 
 3. **Gli adapter trovano solo il testo** e restituiscono `RawRow`. L'interpretazione (analita, numero, range, unità, confidenza, flag) avviene una volta sola in `src/parsers/draft.ts` con le funzioni pure di `src/domain/`.
 4. **Geometria calibrata sui dati**: le colonne si ricavano dalle intestazioni e dalla posizione più frequente dei valori, le tolleranze dall'altezza del testo. Niente coordinate fisse, così una pagina OCR in scala diversa funziona.
 5. **Confidenza di riga** = minimo tra punteggio del match, esito del valore, esito del range, confidenza OCR e tetto dell'adapter. Una riga è "da controllare" sotto 0.8 o con almeno un flag (`ambiguous-number`, `age-stratified-ref`, `derived-ref`, `unit-mismatch`, `ambiguous-analyte`, `suggested-analyte`, `unknown-analyte`, `low-ocr`).
-6. **Punto ambiguo nei numeri** (`7.510` contro `1.029`): si decide per riga, prima con l'intervallo plausibile dell'analita, poi con i numeri non ambigui della stessa riga; altrimenti si legge come migliaia e si chiede all'utente.
+6. **Punto ambiguo nei numeri** (`7.510` contro `1.029`): si decide per riga con due verdetti, l'intervallo plausibile della voce e i numeri non ambigui della stessa riga. I decimali richiedono l'intervallo plausibile e nessun numero contrario; le migliaia uno dei due verdetti e nessuno contrario. Altrimenti si legge come migliaia e si chiede all'utente: una lettura a migliaia sbagliata si vede, una a decimali può sembrare normale (`docs/specs/2026-10-21-dot-reading-design.md`).
 
 ## Scostamento dalla spec
 
