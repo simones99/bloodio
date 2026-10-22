@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { getAnalyte } from '../../src/domain/catalog';
 import {
   chooseDotMode,
   isAmbiguousNumber,
@@ -104,6 +105,43 @@ describe('chooseDotMode', () => {
   });
   it('reports ambiguity when nothing settles it', () => {
     expect(chooseDotMode(['1.029', 'da 1.007 a 1.035'])).toEqual({
+      mode: 'thousands',
+      ambiguous: true,
+    });
+  });
+});
+
+describe('chooseDotMode, the table of spec 2026-10-21 §3.2', () => {
+  const counts = { min: 500, max: 100000 };
+  const gravity = { min: 1, max: 1.06 };
+  const wide = { min: 0, max: 100000 };
+
+  it.each([
+    ['range thousands, anchors agree', ['6.150', 'da 4000 a 11000'], counts, 'thousands', false],
+    ['range thousands, no anchors', ['6.150', 'da 4.000 a 11.000'], counts, 'thousands', false],
+    ['range decimal, no anchors', ['1.018', 'da 1.005 a 1.030'], gravity, 'decimal', false],
+    ['range decimal, anchors agree', ['1.018', '1,005 - 1,030'], gravity, 'decimal', false],
+    ['range thousands, anchors decimal', ['6.150', '4,0 - 11,0'], counts, 'thousands', true],
+    ['range decimal, anchors thousands', ['1.018', 'da 1000 a 1030'], gravity, 'thousands', true],
+    ['both plausible, anchors thousands', ['2.640', 'da 1000 a 4000'], wide, 'thousands', false],
+    ['both plausible, anchors decimal', ['25.000', '0 - 190'], wide, 'thousands', true],
+    ['both plausible, no anchors', ['25.000', ''], wide, 'thousands', true],
+    ['no range, anchors thousands', ['2.640', 'da 1000 a 4000'], undefined, 'thousands', false],
+    ['no range, anchors decimal', ['2.345', '0,27 - 4,2'], undefined, 'thousands', true],
+    [
+      'neither plausible, anchors thousands',
+      ['52.000', 'da 10000 a 40000'],
+      { min: 500, max: 50000 },
+      'thousands',
+      true,
+    ],
+  ] as const)('%s', (_, texts, plausible, mode, ambiguous) => {
+    expect(chooseDotMode([...texts], plausible)).toEqual({ mode, ambiguous });
+  });
+
+  it('never reads a count far above its printed range as a small number', () => {
+    const plausible = getAnalyte('lymphocytes-abs')!.plausible;
+    expect(chooseDotMode(['52.000', 'da 1000 a 4000'], plausible)).toEqual({
       mode: 'thousands',
       ambiguous: true,
     });

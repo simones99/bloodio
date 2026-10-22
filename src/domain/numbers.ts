@@ -51,15 +51,17 @@ export function numberTokens(text: string): string[] {
 
 export interface DotModeChoice {
   mode: DotMode;
-  /** True when the texts contain an ambiguous token and nothing could settle how to read it. */
+  /** True when nothing settles how to read the ambiguous token, or the two verdicts disagree. */
   ambiguous: boolean;
 }
 
 /**
- * Decides how to read dots for one table row (value text plus reference text).
- * 1. The analyte's plausible range settles it when exactly one reading is plausible.
- * 2. Otherwise unambiguous numbers in the same row give the expected magnitude.
- * 3. Otherwise read as thousands and report the ambiguity.
+ * Decides how to read dots for one table row (value text plus reference text), from the first
+ * ambiguous token (spec 2026-10-21 §3). Two verdicts, each given only when exactly one reading
+ * fits: the analyte's plausible range, and the unambiguous numbers of the row ("anchors", within
+ * 20 times). Decimal needs the plausible range and no contrary anchors. Thousands needs either
+ * verdict and no contrary one. Anything else reads as thousands and reports the ambiguity: a wrong
+ * thousands reading is a thousand times too big and shows; a wrong decimal one can look normal.
  */
 export function chooseDotMode(
   texts: string[],
@@ -72,15 +74,19 @@ export function chooseDotMode(
 
   const asThousands = parseItalianNumber(first, 'thousands')!;
   const asDecimal = parseItalianNumber(first, 'decimal')!;
+  const pick = (thousands: boolean, decimal: boolean): DotMode | null =>
+    thousands === decimal ? null : thousands ? 'thousands' : 'decimal';
 
+  let fromRange: DotMode | null = null;
+  let noneFits = false;
   if (plausible) {
     const fits = (n: number) =>
       n * toCanonical >= plausible.min && n * toCanonical <= plausible.max;
-    if (fits(asThousands) !== fits(asDecimal)) {
-      return { mode: fits(asThousands) ? 'thousands' : 'decimal', ambiguous: false };
-    }
+    fromRange = pick(fits(asThousands), fits(asDecimal));
+    noneFits = !fits(asThousands) && !fits(asDecimal);
   }
 
+  let fromAnchors: DotMode | null = null;
   const anchors = tokens
     .filter((t) => !isAmbiguousNumber(t))
     .map((t) => parseItalianNumber(t))
@@ -89,10 +95,15 @@ export function chooseDotMode(
     const low = Math.min(...anchors) / 20;
     const high = Math.max(...anchors) * 20;
     const near = (n: number) => n >= low && n <= high;
-    if (near(asThousands) !== near(asDecimal)) {
-      return { mode: near(asThousands) ? 'thousands' : 'decimal', ambiguous: false };
-    }
+    fromAnchors = pick(near(asThousands), near(asDecimal));
   }
 
-  return { mode: 'thousands', ambiguous: true };
+  const doubt: DotModeChoice = { mode: 'thousands', ambiguous: true };
+  if (noneFits) return doubt;
+  if (fromRange !== null) {
+    return fromAnchors === null || fromAnchors === fromRange
+      ? { mode: fromRange, ambiguous: false }
+      : doubt;
+  }
+  return fromAnchors === 'thousands' ? { mode: 'thousands', ambiguous: false } : doubt;
 }

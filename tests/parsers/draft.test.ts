@@ -70,6 +70,16 @@ describe('buildDraftRow', () => {
     expect(row.flags).toEqual(['unknown-analyte', 'ambiguous-number']);
   });
 
+  it('reads a CPK far above its range as thousands and asks', () => {
+    const row = buildDraftRow(
+      raw({ name: 'CPK', value: '25.000', unit: 'U/L', ref: '0 - 190', section: null }),
+    );
+    expect(row.analyteMatch.analyteId).toBe('cpk');
+    expect(row.parsed).toMatchObject({ value: 25000, refMin: 0, refMax: 190 });
+    expect(row.flags).toEqual(['ambiguous-number']);
+    expect(needsReview(row)).toBe(true);
+  });
+
   it('lowers confidence when a numeric analyte has a text value', () => {
     const row = buildDraftRow(raw({ value: 'in corso' }));
     expect(row.parsed.value).toBeNull();

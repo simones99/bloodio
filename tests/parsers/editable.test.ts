@@ -189,6 +189,19 @@ describe('ambiguousReadings and withReading', () => {
     expect(applied.valueText).toBe('1,25');
     expect(applied.flags).toEqual(['unknown-analyte']);
   });
+
+  it('offers both readings of a CPK far above its range', () => {
+    const draft = buildDraftRow({
+      name: 'CPK',
+      value: '25.000',
+      unit: 'U/L',
+      ref: '0 - 190',
+      section: null,
+      page: 0,
+      bbox: { x: 0, y: 0, w: 0, h: 0 },
+    });
+    expect(ambiguousReadings(toEditableRow(draft, 'k'))).toEqual(['25', '25000']);
+  });
 });
 
 describe('rowProblems and withAnalyte', () => {
