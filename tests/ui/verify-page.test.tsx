@@ -501,7 +501,8 @@ describe('VerifyPage — landmark and focus on arrival', () => {
     const services = await testServices();
     await renderVerifyPage(services);
     const main = await screen.findByRole('main');
-    expect(document.activeElement).toBe(main);
+    // Focus moves in an effect after main is committed: under load it lands after findByRole.
+    await waitFor(() => expect(main).toHaveFocus());
   });
 });
 
