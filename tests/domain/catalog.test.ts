@@ -73,4 +73,27 @@ describe('catalog integrity', () => {
     expect(75 * factor('vitamin-d', 'nmol/L')).toBeCloseTo(30, 0); // 75 nmol/L ≈ 30 ng/mL
     expect(7.51 * factor('wbc', '10^3/µL')).toBeCloseTo(7510, 5);
   });
+
+  it('keeps the plausible ranges that choose how to read dots (spec 2026-10-21 §4)', () => {
+    const plausible = Object.fromEntries(
+      CATALOG.filter((a) => a.plausible).map((a) => [a.id, a.plausible]),
+    );
+    expect(plausible).toMatchObject({
+      rbc: { min: 1e4, max: 1e7 },
+      hemoglobin: { min: 0.1, max: 26 },
+      hematocrit: { min: 0.1, max: 75 },
+      rdw: { min: 8, max: 40 },
+      platelets: { min: 2000, max: 5000000 },
+      mpv: { min: 4, max: 25 },
+      wbc: { min: 30, max: 440000 },
+      'neutrophils-abs': { min: 0, max: 440000 },
+      'lymphocytes-abs': { min: 0, max: 440000 },
+      'monocytes-abs': { min: 0, max: 440000 },
+      'eosinophils-abs': { min: 0, max: 440000 },
+      'basophils-abs': { min: 0, max: 440000 },
+      glucose: { min: 2, max: 1500 },
+      hba1c: { min: 3, max: 24.8 },
+      'vitamin-b12': { min: 50, max: 7500 },
+    });
+  });
 });

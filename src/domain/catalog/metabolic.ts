@@ -81,7 +81,7 @@ export const glucose: Analyte[] = [
     canonicalUnit: 'mg/dL',
     // 1 mmol/L = 18.016 mg/dL
     units: [{ unit: 'mmol/L', toCanonical: 18.016 }],
-    plausible: { min: 10, max: 1500 },
+    plausible: { min: 2, max: 1500 },
   },
   {
     id: 'hba1c',
@@ -92,7 +92,7 @@ export const glucose: Analyte[] = [
     kind: 'numeric',
     // % (NGSP) and mmol/mol (IFCC) are related by an affine formula, not a factor: kept as separate series.
     canonicalUnit: '%',
-    plausible: { min: 3, max: 20 },
+    plausible: { min: 3, max: 24.8 },
   },
   {
     id: 'insulin',
@@ -313,7 +313,7 @@ export const vitamins: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'pg/mL',
     units: [{ unit: 'pmol/L', toCanonical: 1.355 }],
-    plausible: { min: 50, max: 5000 },
+    plausible: { min: 50, max: 7500 },
   },
   // folate: 1 nmol/L = 0.4413 ng/mL
   {

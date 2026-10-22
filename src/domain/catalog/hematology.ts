@@ -25,7 +25,7 @@ const abs = (id: string, name: string, aliases: string[]): Analyte => ({
   kind: 'numeric',
   canonicalUnit: '/µL',
   units: COUNT_UNITS,
-  plausible: { min: 0, max: 50000 },
+  plausible: { min: 0, max: 440000 },
 });
 
 export const hematology: Analyte[] = [
@@ -41,7 +41,7 @@ export const hematology: Analyte[] = [
       { unit: '10^6/µL', toCanonical: 1e6 },
       { unit: '10^12/L', toCanonical: 1e6 },
     ],
-    plausible: { min: 1e6, max: 1e7 },
+    plausible: { min: 1e4, max: 1e7 },
   },
   {
     id: 'hemoglobin',
@@ -52,7 +52,7 @@ export const hematology: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: 'g/dL',
     units: [{ unit: 'g/L', toCanonical: 0.1 }],
-    plausible: { min: 3, max: 25 },
+    plausible: { min: 0.1, max: 26 },
   },
   {
     id: 'hematocrit',
@@ -62,7 +62,7 @@ export const hematology: Analyte[] = [
     specimen: 'blood',
     kind: 'numeric',
     canonicalUnit: '%',
-    plausible: { min: 10, max: 70 },
+    plausible: { min: 0.1, max: 75 },
   },
   {
     id: 'mcv',
@@ -103,7 +103,7 @@ export const hematology: Analyte[] = [
     specimen: 'blood',
     kind: 'numeric',
     canonicalUnit: '%',
-    plausible: { min: 8, max: 30 },
+    plausible: { min: 8, max: 40 },
   },
   {
     id: 'platelets',
@@ -114,7 +114,7 @@ export const hematology: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: '/µL',
     units: COUNT_UNITS,
-    plausible: { min: 5000, max: 2000000 },
+    plausible: { min: 2000, max: 5000000 },
   },
   {
     id: 'mpv',
@@ -124,7 +124,7 @@ export const hematology: Analyte[] = [
     specimen: 'blood',
     kind: 'numeric',
     canonicalUnit: 'fL',
-    plausible: { min: 4, max: 20 },
+    plausible: { min: 4, max: 25 },
   },
   {
     id: 'wbc',
@@ -135,7 +135,7 @@ export const hematology: Analyte[] = [
     kind: 'numeric',
     canonicalUnit: '/µL',
     units: COUNT_UNITS,
-    plausible: { min: 500, max: 100000 },
+    plausible: { min: 30, max: 440000 },
   },
   pct('neutrophils-pct', 'Neutrofili %', ['Neutrofili', 'Neutrofili %', 'Granulociti neutrofili']),
   pct('lymphocytes-pct', 'Linfociti %', ['Linfociti', 'Linfociti %']),
