@@ -10,11 +10,15 @@ export interface ParsedValue {
   valueText: string;
 }
 
-const AMBIGUOUS = /^\d{1,3}(\.\d{3})+$/;
+/** A dot after a leading zero is always decimal: no lab writes "0.005" for five. */
+const AMBIGUOUS = /^[1-9]\d{0,2}(\.\d{3})+$/;
 const NUMERIC = /^\d+([.,]\d+)*$/;
 const NUMBER_TOKEN = /\d[\d.,]*\d|\d/g;
 
-/** True for "7.510", "4.220.000", "1.029": the dot may be a thousands separator or a decimal point. */
+/**
+ * True for "7.510", "4.220.000", "1.029": the dot may be a thousands separator or a decimal point.
+ * Never for "0.005".
+ */
 export function isAmbiguousNumber(token: string): boolean {
   return AMBIGUOUS.test(token.trim());
 }
@@ -23,12 +27,13 @@ export function isAmbiguousNumber(token: string): boolean {
 export function parseItalianNumber(token: string, mode: DotMode = 'thousands'): number | null {
   const t = token.trim();
   if (!NUMERIC.test(t)) return null;
-  if (t.includes(',')) return Number(t.replace(/\./g, '').replace(',', '.'));
-  if (AMBIGUOUS.test(t)) {
+  let n: number;
+  if (t.includes(',')) n = Number(t.replace(/\./g, '').replace(',', '.'));
+  else if (AMBIGUOUS.test(t)) {
     // decimal mode keeps only the last dot: "1.029" -> 1.029
-    return Number(mode === 'thousands' ? t.replace(/\./g, '') : t.replace(/\.(?=.*\.)/g, ''));
-  }
-  return Number(t);
+    n = Number(mode === 'thousands' ? t.replace(/\./g, '') : t.replace(/\.(?=.*\.)/g, ''));
+  } else n = Number(t);
+  return Number.isFinite(n) ? n : null;
 }
 
 export function parseValue(text: string, mode: DotMode = 'thousands'): ParsedValue {

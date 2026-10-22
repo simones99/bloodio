@@ -27,13 +27,22 @@ describe('parseItalianNumber', () => {
   it.each(['Assente', '.', '', '12a', '1,2,3x'])('returns null for %j', (text) => {
     expect(parseItalianNumber(text)).toBeNull();
   });
+
+  it('reads a leading zero as a decimal point whatever the mode', () => {
+    expect(parseItalianNumber('0.005')).toBe(0.005);
+    expect(parseItalianNumber('0.005', 'decimal')).toBe(0.005);
+  });
+
+  it.each(['0.005.000', '1,2,3'])('returns null for %j, which is not a finite number', (text) => {
+    expect(parseItalianNumber(text)).toBeNull();
+  });
 });
 
 describe('isAmbiguousNumber', () => {
   it.each(['7.510', '1.029', '4.220.000'])('%s is ambiguous', (t) => {
     expect(isAmbiguousNumber(t)).toBe(true);
   });
-  it.each(['11,30', '1900', '1.02', '1.0260'])('%s is not ambiguous', (t) => {
+  it.each(['11,30', '1900', '1.02', '1.0260', '0.005', '0.250'])('%s is not ambiguous', (t) => {
     expect(isAmbiguousNumber(t)).toBe(false);
   });
 });
