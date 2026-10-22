@@ -4,7 +4,16 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist', 'coverage', 'public/ocr', 'playwright-report', 'test-results'] },
+  {
+    ignores: [
+      'dist',
+      'coverage',
+      'public/ocr',
+      'playwright-report',
+      'test-results',
+      'claude-code-playground',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
