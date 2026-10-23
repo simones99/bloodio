@@ -110,6 +110,7 @@ export function buildDraftRow(raw: RawRow, options: DraftOptions = {}): DraftRow
     section: raw.section,
     page: raw.page,
     bbox: raw.bbox,
+    ...(raw.valueBox && { valueBox: raw.valueBox }),
     analyteMatch: {
       analyteId: match.analyteId,
       suggestionId: match.suggestionId,

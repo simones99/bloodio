@@ -11,6 +11,7 @@ import {
 import type { SourceFile } from '../../ingest/ingest-file';
 import { toOriginal, type PageGeometry, type Point } from '../../ingest/page-geometry';
 import type { EditableRow } from '../../parsers/editable';
+import type { BBox } from '../../parsers/types';
 import { useServices } from '../app/services';
 import { useModalFocus } from '../app/use-modal-focus';
 import { it } from '../i18n/it';
@@ -18,6 +19,7 @@ import shared from '../styles/shared.module.css';
 import styles from './OriginalSheet.module.css';
 import {
   ARROW_PX,
+  centreOf,
   fitWidth,
   initialView,
   panBy,
@@ -62,6 +64,21 @@ const ARROW_MOVES: Record<string, [number, number]> = {
   ArrowUp: [0, ARROW_PX],
   ArrowDown: [0, -ARROW_PX],
 };
+
+/**
+ * How far below the row's box the rectangle is drawn, in lines of the row. The box ends on the
+ * baseline (union in layout.ts): without this, commas and descenders fall past its bottom, and
+ * the border, centred on the edge, hides them ("5,07" reads "5.07").
+ */
+const DESCENT_LINES = 0.3;
+
+/**
+ * The row's box as drawn: grown below the baseline to hold commas and descenders. It stays in the
+ * units of the page as read, so the line height is too (scale 1), before toOriginal.
+ */
+function drawnBox(bbox: BBox, rawRef: string): BBox {
+  return { ...bbox, h: bbox.h + DESCENT_LINES * rowLineHeight({ bbox, rawRef }, 1) };
+}
 
 const midpoint = (a: Point, b: Point): Point => ({ x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 });
 const distance = (a: Point, b: Point) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -108,11 +125,17 @@ export function OriginalSheet({ origin, geometry, files, pages, onClose }: Origi
   }, [page]);
 
   const corners = useMemo(() => toOriginal(origin.bbox, geometry), [origin.bbox, geometry]);
-  /** The centre of the rectangle, where the page opens and fits. */
-  const focus = useMemo(
-    () => midpoint(midpoint(corners[0], corners[2]), midpoint(corners[1], corners[3])),
-    [corners],
+  const drawnCorners = useMemo(
+    () => toOriginal(drawnBox(origin.bbox, origin.rawRef), geometry),
+    [origin.bbox, origin.rawRef, geometry],
   );
+  /** The page opens on the stretch from the name to the value, when the value has its own box. */
+  const valueCorners = useMemo(
+    () => (origin.valueBox ? toOriginal(origin.valueBox, geometry) : null),
+    [origin.valueBox, geometry],
+  );
+  /** The centre of the rectangle, where the page fits. */
+  const focus = useMemo(() => centreOf(corners), [corners]);
   const canvasWidth = page.status === 'ready' ? page.canvas.width : 0;
 
   /** The page and the visible area as they are now: the area changes when the phone turns. */
@@ -131,8 +154,10 @@ export function OriginalSheet({ origin, geometry, files, pages, onClose }: Origi
   // stays the same once the page is ready: later zooms and moves are the user's.
   const lineHeight = rowLineHeight(origin, geometry.scale);
   useLayoutEffect(() => {
-    if (page.status === 'ready') setView(initialView(frameOf(), focus, lineHeight));
-  }, [page, frameOf, focus, lineHeight]);
+    if (page.status === 'ready') {
+      setView(initialView(frameOf(), lineHeight, corners, valueCorners));
+    }
+  }, [page, frameOf, lineHeight, corners, valueCorners]);
 
   useEffect(() => {
     if (page.status !== 'ready') return;
@@ -235,7 +260,7 @@ export function OriginalSheet({ origin, geometry, files, pages, onClose }: Origi
               preserveAspectRatio="none"
               aria-hidden="true"
             >
-              <polygon points={corners.map(({ x, y }) => `${x},${y}`).join(' ')} />
+              <polygon points={drawnCorners.map(({ x, y }) => `${x},${y}`).join(' ')} />
             </svg>
           </div>
         </div>

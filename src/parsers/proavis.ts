@@ -110,6 +110,7 @@ function parsePage(
       section,
       page: pageIndex,
       bbox: union(parts),
+      valueBox: union(value),
       aligned: isAligned(name, value, pick('unit'), pick('ref')),
     });
   }

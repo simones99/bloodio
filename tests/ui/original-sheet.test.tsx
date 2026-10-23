@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PageRenderer } from '../../src/ingest/image-pages';
 import { identityGeometry, type PageGeometry } from '../../src/ingest/page-geometry';
 import { parseReport } from '../../src/parsers/registry';
+import type { DraftRow } from '../../src/parsers/types';
 import { ServicesProvider, type Services } from '../../src/ui/app/services';
 import { ImportSessionProvider, type ImportSession } from '../../src/ui/import/import-session';
 import { VerifyPage } from '../../src/ui/pages/VerifyPage';
@@ -130,7 +131,8 @@ describe('"Vedi originale" in the verification of a PDF with text', () => {
     expect(original).toHaveBeenCalledWith(session.file.files, 0);
     expect(within(sheet).queryByText('Preparazione della pagina…')).not.toBeInTheDocument();
     await waitFor(() => expect([...sheet.querySelectorAll('canvas')]).toEqual([drawn]));
-    // A PDF with text: the rectangle is the row's box, in PDF points of the 612 × 792 page.
+    // A PDF with text: the rectangle is the row's box, in PDF points of the 612 × 792 page, with
+    // its bottom 0.3 of the 12-point line below the baseline, where commas and descenders go.
     expect(page.querySelector('svg')).toHaveAttribute('viewBox', '0 0 612 792');
     const points = page.querySelector('polygon')!.getAttribute('points')!;
     expect(
@@ -141,8 +143,47 @@ describe('"Vedi originale" in the verification of a PDF with text', () => {
     ).toEqual([
       [40, 550],
       [540, 550],
-      [540, 562],
-      [40, 562],
+      [540, expect.closeTo(565.6, 6)],
+      [40, expect.closeTo(565.6, 6)],
+    ]);
+  });
+
+  it('grows the rectangle by 0.3 of one line, not of the whole box, for a range on three lines', async () => {
+    const drawn = document.createElement('canvas');
+    services.pages.original = () => Promise.resolve(drawn);
+    const session = pdfSession();
+    if (session.mode !== 'import') throw new Error('an import session is expected');
+    // Vitamina D's range takes three lines: a 36-point box holds three lines of 12.
+    const boxed: ImportSession = {
+      ...session,
+      draft: {
+        ...session.draft,
+        rows: session.draft.rows.map((row) =>
+          row.rawName === 'Vitamina D (25 OH)'
+            ? { ...row, bbox: { x: 40, y: 300, w: 500, h: 36 } }
+            : row,
+        ),
+      },
+    };
+    const { user } = await renderVerifyPage(services, boxed);
+    const row = screen.getByRole('article', { name: 'Vitamina D (25 OH)' });
+    await user.click(within(row).getByRole('button', { name: 'Vedi originale' }));
+
+    const sheet = screen.getByRole('dialog', { name: 'Pagina 1 di 2' });
+    const page = await within(sheet).findByRole('img');
+    await waitFor(() => expect([...sheet.querySelectorAll('canvas')]).toEqual([drawn]));
+    // The last baseline at 336, then 0.3 of a 12-point line: 3.6 points, not 10.8.
+    const corners = page
+      .querySelector('polygon')!
+      .getAttribute('points')!
+      .trim()
+      .split(/\s+/)
+      .map((pair) => pair.split(',').map(Number));
+    expect(corners).toEqual([
+      [40, 300],
+      [540, 300],
+      [540, expect.closeTo(339.6, 6)],
+      [40, expect.closeTo(339.6, 6)],
     ]);
   });
 
@@ -190,8 +231,15 @@ describe('zoom and pan of the page', () => {
   });
   afterEach(() => vi.restoreAllMocks());
 
-  /** The Glicemia row at a known box of the 612 × 792 page, one line of text 12 points high. */
-  async function openGlicemia() {
+  /**
+   * The Glicemia row at a known box of the 612 × 792 page, one line of text 12 points high, with
+   * no box of its value unless one is given: the sheet then opens on the centre of the row.
+   */
+  async function openGlicemia(
+    boxes: Pick<DraftRow, 'bbox' | 'valueBox'> = {
+      bbox: { x: 40, y: 550, w: 500, h: 12 },
+    },
+  ) {
     const session = pdfSession();
     if (session.mode !== 'import') throw new Error('an import session is expected');
     const boxed: ImportSession = {
@@ -199,7 +247,7 @@ describe('zoom and pan of the page', () => {
       draft: {
         ...session.draft,
         rows: session.draft.rows.map((row) =>
-          row.rawName === 'Glicemia' ? { ...row, bbox: { x: 40, y: 550, w: 500, h: 12 } } : row,
+          row.rawName === 'Glicemia' ? { ...row, valueBox: undefined, ...boxes } : row,
         ),
       },
     };
@@ -230,16 +278,21 @@ describe('zoom and pan of the page', () => {
     }
   });
 
-  it('opens on the row with a line of text 20 pixels high', async () => {
+  it('opens with the name and the value of the row in view', async () => {
     services.pages.original = () => Promise.resolve(drawn());
-    const { sheet } = await openGlicemia();
+    const { sheet } = await openGlicemia({
+      bbox: { x: 40, y: 300, w: 500, h: 12 },
+      valueBox: { x: 300, y: 301, w: 20, h: 10 },
+    });
     const page = await within(sheet).findByRole('img');
-    // 20 / 12 points; the centre of the row, (290, 556), at the centre of the area, (200, 350).
+    // From the name at x 40 to the value's end at 320: 280 points, 467 pixels at 20 a line. They
+    // fit the 368 between the margins at 368 / 280, a line 15.8 pixels high, centred on (180, 306).
+    const zoom = 368 / 280;
     await waitFor(() =>
       expect(viewOf(page)).toEqual({
-        zoom: expect.closeTo(20 / 12, 3),
-        x: expect.closeTo(200 - 290 * (20 / 12), 1),
-        y: expect.closeTo(350 - 556 * (20 / 12), 1),
+        zoom: expect.closeTo(zoom, 3),
+        x: expect.closeTo(200 - 180 * zoom, 1),
+        y: expect.closeTo(350 - 306 * zoom, 1),
       }),
     );
   });

@@ -57,6 +57,11 @@ describe('AST adapter', () => {
       ref: 'Fino a 10 anni: da 5,6 a 12,2\nDa 11 anni in poi: da 5,4 a 12,6',
     });
   });
+  it('keeps the box of the value alone, for the opening of "Vedi originale"', () => {
+    // The "4,30" printed at x 273, 15.8 wide: the value ends at 288.8.
+    const [tsh] = parseAstRows(fixture);
+    expect(tsh?.valueBox).toMatchObject({ x: 273, w: expect.closeTo(15.8, 6) });
+  });
   it('ignores the header block and the signature lines', () => {
     const names = parseAstRows(fixture).map((r) => r.name);
     expect(names).toEqual(['TSH', 'FT4']);

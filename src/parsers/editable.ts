@@ -28,6 +28,8 @@ export interface EditableRow {
   origin: {
     page: number;
     bbox: BBox;
+    /** The value alone: the sheet opens on the stretch from the name to it. */
+    valueBox?: BBox;
     rawName: string;
     rawValue: string;
     initialValueText: string;
@@ -84,6 +86,7 @@ export function toEditableRow(draft: DraftRow, key: string): EditableRow {
     origin: {
       page: draft.page,
       bbox: draft.bbox,
+      ...(draft.valueBox && { valueBox: draft.valueBox }),
       rawName: draft.rawName,
       rawValue: draft.rawValue,
       initialValueText: valueText,

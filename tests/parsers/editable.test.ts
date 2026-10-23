@@ -84,6 +84,13 @@ describe('toEditableRow', () => {
       rawRef: '4-10 Carenza grave\n10-30 Carenza moderata\n> 30 Normale',
     });
   });
+  it('keeps the box of the value, for the opening of "Vedi originale"', () => {
+    const tsh = parseReport(loadFixture('proavis-2022-08-20')).rows.find(
+      (r) => r.rawName === 'TSH',
+    )!;
+    // The "5,07" of the report, from x 219.2 to 238.7.
+    expect(toEditableRow(tsh, 'k').origin?.valueBox).toMatchObject({ x: 219.2, w: 19.5 });
+  });
 });
 
 describe('editableToMeasurementInput', () => {

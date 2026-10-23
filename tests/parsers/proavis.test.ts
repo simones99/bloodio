@@ -65,6 +65,15 @@ describe('PROAVIS adapter: rows of the 20/08/2022 report', () => {
       section: 'MONITORAGGIO TIROIDE',
     });
   });
+  it('keeps the box of the value alone, for the opening of "Vedi originale"', () => {
+    // The "5,07" printed at x 219.2, 19.5 wide, baseline 501.6, 10 high: the value ends at 238.7.
+    expect(row(rows, 'TSH')?.valueBox).toEqual({
+      x: 219.2,
+      y: expect.closeTo(491.6, 6),
+      w: 19.5,
+      h: expect.closeTo(10, 6),
+    });
+  });
   it('keeps percentage and absolute counts as separate rows', () => {
     expect(row(rows, 'Neutrofili')).toMatchObject({ value: '55,2', unit: '%' });
     expect(row(rows, 'NEUTROFILI')).toMatchObject({
@@ -104,6 +113,7 @@ describe('PROAVIS adapter: mis-columned value (OCR loses the number)', () => {
     const rows = parseProavisRows(withoutTshValue);
     expect(rows).toHaveLength(25);
     expect(row(rows, 'TSH')).toMatchObject({ value: '', section: 'MONITORAGGIO TIROIDE' });
+    expect(row(rows, 'TSH')?.valueBox).toBeUndefined();
     expect(row(rows, 'FT4')).toMatchObject({ section: 'MONITORAGGIO TIROIDE' });
   });
 });

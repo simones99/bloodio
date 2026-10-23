@@ -47,6 +47,11 @@ export interface RawRow {
    * spec 2026-10-16 §6.2, recorded in Task 17. Absent means unknown, so never trusted either.
    */
   aligned?: boolean;
+  /**
+   * The box of the value alone, set by the adapters that read it from its own column: "Vedi
+   * originale" opens on the stretch from the name to the value (spec 2026-10-22 §4.5).
+   */
+  valueBox?: BBox;
 }
 
 export type RowFlag =
@@ -70,6 +75,8 @@ export interface DraftRow {
   section: string | null;
   page: number;
   bbox: BBox;
+  /** As in RawRow: absent when the adapter did not read the value from its own column. */
+  valueBox?: BBox;
   analyteMatch: { analyteId: string | null; suggestionId: string | null; score: number };
   parsed: {
     value: number | null;

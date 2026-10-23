@@ -20,8 +20,15 @@ export interface PageView {
   y: number;
 }
 
-/** On opening, a line of the row is about this high, in CSS px. */
+/** On opening, a line of the row aims at this height, in CSS px: lower on a narrow area. */
 const LINE_PX = 20;
+const NARROW_LINE_PX = 16;
+/** An area narrower than this is a phone's: its rows aim at NARROW_LINE_PX. */
+const NARROW_AREA_PX = 400;
+/** On opening, the stretch from the name to the value keeps this far from the area's edges. */
+const MARGIN_PX = 16;
+/** To fit the stretch, a line goes no lower than this; past it the value wins. */
+const MIN_LINE_PX = 12;
 const MAX_PX_PER_CANVAS_PIXEL = 2;
 /** "Ingrandisci" multiplies by this, "Riduci" divides. */
 export const ZOOM_STEP = 1.5;
@@ -71,9 +78,59 @@ function centredOn(zoom: number, focus: Point, frame: ZoomFrame): PageView {
   );
 }
 
-/** On opening: a line of the row about 20 CSS px high, the row at the centre. */
-export function initialView(frame: ZoomFrame, focus: Point, lineHeight: number): PageView {
-  return centredOn(clampZoom(LINE_PX / lineHeight, frame), focus, frame);
+/** A box on the original, clockwise from its top left corner as read: what toOriginal gives. */
+export type Corners = readonly [Point, Point, Point, Point];
+
+/** The centre of a box: where its diagonals cross. */
+export function centreOf(box: Corners): Point {
+  const [a, b, c, d] = box;
+  return { x: (a.x + b.x + c.x + d.x) / 4, y: (a.y + b.y + c.y + d.y) / 4 };
+}
+
+/**
+ * On opening (spec 2026-10-22 §4.5): `row` is the rectangle of the row and `value` the box of its
+ * value, null when the adapter did not read it on its own.
+ */
+export function initialView(
+  frame: ZoomFrame,
+  lineHeight: number,
+  row: Corners,
+  value: Corners | null,
+): PageView {
+  const linePx = frame.areaWidth < NARROW_AREA_PX ? NARROW_LINE_PX : LINE_PX;
+  const aimed = linePx / lineHeight;
+  if (!value) return centredOn(clampZoom(aimed, frame), centreOf(row), frame);
+  // The stretch from the name to the value: the row's start, as read, and the value's end.
+  const stretch = boundsOf([row[0], row[3], value[1], value[2]]);
+  const fitting = Math.min(
+    (frame.areaWidth - 2 * MARGIN_PX) / stretch.w,
+    (frame.areaHeight - 2 * MARGIN_PX) / stretch.h,
+  );
+  const lowest = MIN_LINE_PX / lineHeight;
+  const middle = { x: stretch.x + stretch.w / 2, y: stretch.y + stretch.h / 2 };
+  if (fitting >= lowest)
+    return centredOn(clampZoom(Math.min(aimed, fitting), frame), middle, frame);
+  // Not even at the lowest zoom: the value wins, its end at the right margin, so that the view
+  // reaches as far towards the name as it can.
+  const zoom = clampZoom(lowest, frame);
+  const valueEnd = Math.max(value[1].x, value[2].x);
+  return clamped(
+    {
+      zoom,
+      x: frame.areaWidth - MARGIN_PX - valueEnd * zoom,
+      y: frame.areaHeight / 2 - middle.y * zoom,
+    },
+    frame,
+  );
+}
+
+/** The straight box holding the points, in their units: a tilted stretch takes more room. */
+function boundsOf(points: readonly Point[]): BBox {
+  const xs = points.map((p) => p.x);
+  const ys = points.map((p) => p.y);
+  const x = Math.min(...xs);
+  const y = Math.min(...ys);
+  return { x, y, w: Math.max(...xs) - x, h: Math.max(...ys) - y };
 }
 
 /** The page as wide as the area, the row still centred vertically. */

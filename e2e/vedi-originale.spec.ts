@@ -27,6 +27,114 @@ async function polygonOf(original: Locator): Promise<[number, number][]> {
     .map((pair) => pair.split(',').map(Number) as [number, number]);
 }
 
+/** Where a printed word of the fixture starts and ends, and its baseline, in PDF points. */
+function wordOf(fixture: FixtureName, text: string) {
+  const item = loadFixture(fixture).pages[0]!.items.find((i) => i.text === text);
+  expect(item, `"${text}" printed in ${fixture}`).toBeDefined();
+  return { left: item!.x, right: item!.x + item!.w, baseline: item!.y };
+}
+
+/** A stretch of the page from left to right, in the units of the original. */
+interface Span {
+  left: number;
+  right: number;
+}
+
+/**
+ * Below this luminance a pixel is ink. A PDF page is white; the photo's paper is shaded and noisy,
+ * so its threshold sits lower, to keep the grey of the paper out of the ink.
+ */
+const INK_ON_PDF = 128;
+const INK_ON_PHOTO = 90;
+
+/** The ink of a word against the rectangle, in the units of the original. */
+interface InkAgainstRectangle {
+  /** The rectangle's top and bottom edges at the middle of the word. */
+  top: number;
+  bottom: number;
+  inkTop: number;
+  inkBottom: number;
+  /** One CSS pixel: half of the 2-pixel border falls inside the edge, so ink must clear it. */
+  cssPx: number;
+}
+
+/**
+ * The ink in `span`: the run of dark lines of the canvas that holds the rectangle's middle, since
+ * the rows above and below print in the same column.
+ */
+async function inkAgainstRectangle(
+  original: Locator,
+  span: Span,
+  dark: number,
+): Promise<InkAgainstRectangle> {
+  const corners = await polygonOf(original);
+  return original.evaluate(
+    (element, { corners, span, dark }) => {
+      const canvas = element.querySelector('canvas')!;
+      const width = Number(element.querySelector('svg')!.getAttribute('viewBox')!.split(' ')[2]);
+      const s = canvas.width / width;
+      const [a, b, c, d] = corners;
+      const [x0, x1] = [span.left, span.right];
+      const middle = (x0 + x1) / 2;
+      const edgeAt = (p: [number, number], q: [number, number]) =>
+        p[1] + ((q[1] - p[1]) * (middle - p[0])) / (q[0] - p[0]);
+      const top = edgeAt(a!, b!);
+      const bottom = edgeAt(d!, c!);
+      const height = bottom - top;
+      const [left, from] = [Math.round(x0 * s), Math.round((top - height) * s)];
+      const pixels = canvas
+        .getContext('2d')!
+        .getImageData(left, from, Math.round(x1 * s) - left, Math.round(3 * height * s));
+      const inked = Array.from({ length: pixels.height }, (_, y) => {
+        let count = 0;
+        for (let x = 0; x < pixels.width; x++) {
+          const [r, g, b] = pixels.data.subarray((y * pixels.width + x) * 4);
+          if (0.299 * r! + 0.587 * g! + 0.114 * b! < dark) count++;
+        }
+        return count >= 2;
+      });
+      let line = Math.round(((top + bottom) / 2) * s) - from;
+      for (let k = 0; !inked[line] && k < pixels.height; k++) {
+        if (inked[line + k]) line += k;
+        else if (inked[line - k]) line -= k;
+      }
+      let [first, last] = [line, line];
+      while (inked[first - 1]) first--;
+      while (inked[last + 1]) last++;
+      const zoom = Number(/scale\(([\d.]+)\)/.exec(element.style.transform)![1]);
+      return {
+        top,
+        bottom,
+        inkTop: (from + first) / s,
+        inkBottom: (from + last + 1) / s,
+        cssPx: 1 / zoom,
+      };
+    },
+    { corners, span, dark },
+  );
+}
+
+/** No ink of the word under the rectangle's border, nor past it. */
+function expectInkInside(ink: InkAgainstRectangle) {
+  expect(ink.inkTop - ink.cssPx).toBeGreaterThanOrEqual(ink.top);
+  expect(ink.inkBottom + ink.cssPx).toBeLessThanOrEqual(ink.bottom);
+}
+
+/** A point of the photo turned by `degrees` about the photo's centre, as degrade.mjs turns it. */
+function turnedAboutCentre(
+  point: { x: number; y: number },
+  degrees: number,
+  width: number,
+  height: number,
+) {
+  const angle = (degrees * Math.PI) / 180;
+  const [dx, dy] = [point.x - width / 2, point.y - height / 2];
+  return {
+    x: width / 2 + dx * Math.cos(angle) - dy * Math.sin(angle),
+    y: height / 2 + dx * Math.sin(angle) + dy * Math.cos(angle),
+  };
+}
+
 const centreOf = (points: [number, number][]) => ({
   x: points.reduce((sum, [x]) => sum + x, 0) / points.length,
   y: points.reduce((sum, [, y]) => sum + y, 0) / points.length,
@@ -72,6 +180,10 @@ test('"Vedi originale" shows the page of a PDF with text with a rectangle on the
   expect(centre.x).toBeLessThan(box.right);
   expect(centre.y).toBeGreaterThan(box.top);
   expect(centre.y).toBeLessThan(box.bottom);
+  // The comma of "5,07" goes below the baseline: the border must not hide its tail.
+  expectInkInside(
+    await inkAgainstRectangle(original, wordOf('proavis-2022-08-20', '5,07'), INK_ON_PDF),
+  );
 
   await sheet.getByRole('button', { name: 'Chiudi' }).click();
   await expect(sheet).toBeHidden();
@@ -161,18 +273,27 @@ test('"Vedi originale" shows the photo as taken, with the rectangle turned along
 
   // The fixture's row box, in pixels and turned by 1.5° about the centre as degrade.mjs drew it:
   // the centre is inside when, turned back by −1.5°, it falls in the box in points.
-  const centre = centreOf(points);
-  const angle = (-1.5 * Math.PI) / 180;
-  const [dx, dy] = [centre.x - width / 2, centre.y - height / 2];
-  const back = {
-    x: (width / 2 + dx * Math.cos(angle) - dy * Math.sin(angle)) / SCAN_SCALE,
-    y: (height / 2 + dx * Math.sin(angle) + dy * Math.cos(angle)) / SCAN_SCALE,
-  };
+  const turned = (point: { x: number; y: number }, degrees: number) =>
+    turnedAboutCentre(point, degrees, width, height);
+  const unturned = turned(centreOf(points), -1.5);
+  const back = { x: unturned.x / SCAN_SCALE, y: unturned.y / SCAN_SCALE };
   const box = tshRowBox('proavis-2021-07-10', '2,34');
   expect(back.x).toBeGreaterThan(box.left);
   expect(back.x).toBeLessThan(box.right);
   expect(back.y).toBeGreaterThan(box.top);
   expect(back.y).toBeLessThan(box.bottom);
+
+  // "2,34" in the photo's pixels, turned by 1.5° as the photo was; the comma goes below the baseline.
+  const value = wordOf('proavis-2021-07-10', '2,34');
+  const inPhoto = (x: number) =>
+    turned({ x: x * SCAN_SCALE, y: value.baseline * SCAN_SCALE }, 1.5).x;
+  expectInkInside(
+    await inkAgainstRectangle(
+      original,
+      { left: inPhoto(value.left), right: inPhoto(value.right) },
+      INK_ON_PHOTO,
+    ),
+  );
 });
 
 test('the page zooms with the buttons and moves with the arrows and the mouse, at 375 pixels', async ({
