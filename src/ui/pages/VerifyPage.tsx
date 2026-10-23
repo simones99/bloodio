@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router';
 import { getAnalyte } from '../../domain/catalog';
 import type { AnalyteRef, CustomAnalyte, Report, ReportType } from '../../domain/types';
 import type { CustomAnalyteInput } from '../../storage/types';
@@ -18,6 +18,7 @@ import { useServices } from '../app/services';
 import { useQuery } from '../app/use-query';
 import { AnalytePicker, type AnalyteChoice } from '../import/AnalytePicker';
 import { useImportSession } from '../import/import-session';
+import { OriginalSheet } from '../import/OriginalSheet';
 import { VerifyRow } from '../import/VerifyRow';
 import { formatDateLong, it } from '../i18n/it';
 import shared from '../styles/shared.module.css';
@@ -31,10 +32,16 @@ const PENDING_PREFIX = 'pending:';
 const newPendingId = () => `${PENDING_PREFIX}${nextPendingId++}`;
 const isPendingCustomId = (id: string) => id.startsWith(PENDING_PREFIX);
 
+/** The history entry the "Vedi originale" sheet adds on the same route, so that Back closes it. */
+interface OriginalState {
+  original?: string;
+}
+
 export function VerifyPage() {
   const { session, setSession } = useImportSession();
   const { reports, customAnalytes, settings } = useServices();
   const navigate = useNavigate();
+  const location = useLocation();
   const main = useRef<HTMLElement>(null);
 
   const custom = useQuery(useCallback(() => customAnalytes.list(), [customAnalytes]));
@@ -80,6 +87,8 @@ export function VerifyPage() {
   );
   /** Guards against a double tap on "Salva referto" starting two saves at once. */
   const savingRef = useRef(false);
+  /** Set once the sheet went back: a held Esc must not go back again, past the verification. */
+  const closingOriginal = useRef(false);
 
   const labs = useQuery(useCallback(() => reports.listLabs(), [reports]));
 
@@ -223,22 +232,18 @@ export function VerifyPage() {
           navigate(`/reports/${session.reportId}?updated=1`, { replace: true });
         } else {
           const keepFile = await settings.get('keepOriginalFile');
-          const attachments =
-            session.mode === 'import' && keepFile
-              ? [
-                  {
-                    data: session.file.data,
-                    mimeType: session.file.mimeType,
-                    fileName: session.file.fileName,
-                  },
-                ]
-              : [];
+          const attachments = session.mode === 'import' && keepFile ? session.file.files : [];
           const id = await reports.saveReport(
             {
               sampleDate,
               lab: lab.trim(),
               type,
-              source: session.mode === 'import' ? 'parser' : 'manuale',
+              source:
+                session.mode === 'import'
+                  ? session.file.text.source === 'ocr'
+                    ? 'ocr'
+                    : 'parser'
+                  : 'manuale',
               adapterId: session.mode === 'import' ? session.draft.adapterId : null,
               notes: notes.trim(),
               fileHash: session.mode === 'import' ? session.file.fileHash : null,
@@ -266,6 +271,21 @@ export function VerifyPage() {
 
   const discardTo = session.mode === 'edit' ? `/reports/${session.reportId}` : '/import';
   const picking = rows.find((row) => row.key === pickingFor);
+  const originalFor = (location.state as OriginalState | null)?.original;
+  const original = rows.find((row) => row.key === originalFor)?.origin;
+
+  function openOriginal(rowKey: string) {
+    closingOriginal.current = false;
+    navigate('.', { state: { original: rowKey } satisfies OriginalState });
+  }
+
+  // Back over the entry the sheet added, so it does not stay in the history.
+  function closeOriginal() {
+    if (closingOriginal.current) return;
+    closingOriginal.current = true;
+    navigate(-1);
+  }
+  const showsOriginal = (row: EditableRow) => session.mode === 'import' && row.origin !== null;
 
   return (
     <div className={styles.frame}>
@@ -273,6 +293,13 @@ export function VerifyPage() {
         <header className={shared.pageHead}>
           <h1 className={`display ${shared.pageTitle}`}>{it.verify.title}</h1>
           <p className={shared.lead}>{it.verify.lead(rows.length, pendingCount)}</p>
+          {session.mode === 'import' && session.file.text.source === 'ocr' && (
+            <p className={styles.notice}>
+              {session.draft.rows.some((row) => !row.flags.includes('low-ocr'))
+                ? it.verify.ocrNoticeTrusted
+                : it.verify.ocrNotice}
+            </p>
+          )}
         </header>
 
         <div className={styles.fields}>
@@ -366,6 +393,7 @@ export function VerifyPage() {
               onDelete={() => setRows((all) => all.filter((r) => r.key !== row.key))}
               onPickAnalyte={() => setPickingFor(row.key)}
               onUseSuggestion={(analyteId) => update(withAnalyte(row, { analyteId }))}
+              onViewOriginal={showsOriginal(row) ? () => openOriginal(row.key) : undefined}
             />
           ))}
         </div>
@@ -441,6 +469,16 @@ export function VerifyPage() {
           custom={customList}
           onChoose={(choice) => void choose(choice)}
           onClose={() => setPickingFor(null)}
+        />
+      )}
+
+      {original && session.mode === 'import' && (
+        <OriginalSheet
+          origin={original}
+          geometry={session.file.geometry[original.page]!}
+          files={session.file.files}
+          pages={session.file.text.pages.length}
+          onClose={closeOriginal}
         />
       )}
     </div>

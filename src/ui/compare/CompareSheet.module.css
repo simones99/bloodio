@@ -1,0 +1,90 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: rgb(0 0 0 / 60%);
+}
+
+/* Title and buttons stay in view; only the list scrolls. */
+.sheet {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 560px;
+  max-height: 85vh;
+  max-height: 85dvh;
+  padding: 20px 0 calc(16px + env(safe-area-inset-bottom));
+  border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+  background: var(--grafite);
+}
+
+.title {
+  flex: none;
+  padding: 0 var(--gutter) 12px;
+  font-size: 18px;
+  font-weight: 650;
+}
+
+.list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: var(--tap);
+  padding: 12px var(--gutter);
+  border-top: 1px solid var(--filetto);
+}
+
+.option input {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  accent-color: var(--arterioso);
+}
+
+.text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.date {
+  font-weight: 500;
+}
+
+.detail {
+  font-size: 14px;
+  color: var(--cenere);
+  overflow-wrap: anywhere;
+}
+
+.chip {
+  margin-left: auto;
+  padding: 1px 8px;
+  border: 1px solid var(--cenere);
+  border-radius: var(--radius-pill);
+  font-size: 12px;
+  color: var(--cenere);
+  white-space: nowrap;
+}
+
+.actions {
+  flex: none;
+  display: flex;
+  gap: 12px;
+  padding: 16px var(--gutter) 0;
+}
+
+.actions button {
+  flex: 1;
+}

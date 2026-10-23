@@ -17,7 +17,22 @@ export async function testServices(): Promise<Services> {
       get: () => Promise.resolve({ persisted: null, usage: null }),
       requestPersist: () => Promise.resolve(false),
     },
+    app: { installed: () => false, watchOffline: () => () => {} },
+    ocrOffline: {
+      watch: (onChange) => {
+        onChange('unsupported');
+        return () => {};
+      },
+      download: () => {},
+      size: () => 0,
+    },
     restart: () => {},
     openPdf: () => Promise.reject(new Error('openPdf is not available in component tests')),
+    ocr: () => Promise.reject(new Error('OCR is not available in component tests')),
+    pages: {
+      fromImages: () => Promise.reject(new Error('pages are not available in component tests')),
+      fromPdf: () => Promise.reject(new Error('pages are not available in component tests')),
+      original: () => Promise.reject(new Error('pages are not available in component tests')),
+    },
   };
 }

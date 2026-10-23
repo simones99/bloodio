@@ -75,6 +75,15 @@ describe('toEditableRow', () => {
     expect(isPending(row)).toBe(true);
     expect(isPending({ ...row, confirmed: true })).toBe(false);
   });
+  it('keeps the name and the range as printed, for "Vedi originale"', () => {
+    const row = toEditableRow(draft('Vitamina D (25 OH)'), 'k');
+    expect(row.origin).toMatchObject({
+      rawName: 'Vitamina D (25 OH)',
+      rawValue: '65,8',
+      rawUnit: 'ng/ml',
+      rawRef: '4-10 Carenza grave\n10-30 Carenza moderata\n> 30 Normale',
+    });
+  });
 });
 
 describe('editableToMeasurementInput', () => {

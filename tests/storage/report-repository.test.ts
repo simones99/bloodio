@@ -417,3 +417,29 @@ describe('listReportSummaries', () => {
     expect(summary).toMatchObject({ total: 3, outOfRange: 1, notEvaluable: 1 });
   });
 });
+
+describe('listEntryRefsByReport', () => {
+  it('gives every report the entries it measures, custom ones included', async () => {
+    const first = await repo.saveReport(reportInput({ sampleDate: '2021-10-04' }), [
+      measurementInput(),
+      measurementInput({ analyteId: 'ft4', value: 1.56, valueText: '1,56', unit: 'ng/dL' }),
+      measurementInput({
+        analyteId: null,
+        customAnalyteId: 'c1',
+        value: 9,
+        valueText: '9',
+        unit: 'µmol/L',
+      }),
+    ]);
+    const second = await repo.saveReport(reportInput(), [
+      measurementInput(),
+      measurementInput({ analyteId: null, customAnalyteId: null, value: 3, valueText: '3' }),
+    ]);
+    const empty = await repo.saveReport(reportInput({ sampleDate: '2021-08-30' }), []);
+
+    const refs = await repo.listEntryRefsByReport();
+    expect([...refs.get(first)!].sort()).toEqual(['custom:c1', 'ft4', 'tsh']);
+    expect([...refs.get(second)!]).toEqual(['tsh']);
+    expect(refs.has(empty)).toBe(false);
+  });
+});

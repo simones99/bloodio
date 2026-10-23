@@ -9,6 +9,8 @@ dist/
 coverage/
 playwright-report/
 test-results/
+# OCR engine and models, copied from node_modules by scripts/copy-ocr-assets.mjs
+public/ocr/
 
 # OS and editor
 .DS_Store

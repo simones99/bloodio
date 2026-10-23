@@ -68,6 +68,7 @@ export const genericAdapter: LabAdapter = {
       sampleDate: genericDate(pt),
       rawRows: parseGenericRows(pt),
       source: pt.source,
+      pages: pt.pages,
       options: { maxConfidence: GENERIC_MAX_CONFIDENCE },
     }),
 };

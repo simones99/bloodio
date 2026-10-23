@@ -21,6 +21,13 @@ const SPELLINGS: Record<string, string> = {
   'g/l': 'g/L',
   'mg/dl': 'mg/dL',
   'mg/l': 'mg/L',
+  'mg/ml': 'mg/mL',
+  'µg/ml': 'µg/mL',
+  'mcg/ml': 'µg/mL',
+  'ng/l': 'ng/L',
+  'pg/l': 'pg/L',
+  'pg/dl': 'pg/dL',
+  'mol/l': 'mol/L',
   'µg/dl': 'µg/dL',
   'mcg/dl': 'µg/dL',
   'µg/l': 'µg/L',
@@ -57,14 +64,65 @@ const SPELLINGS: Record<string, string> = {
   s: 's',
 };
 
-/** Normalizes the spelling of a printed unit. Unknown units come back trimmed with a normalized micro sign. */
-export function normalizeUnit(raw: string): string {
-  const micro = raw
+function withMicroSign(raw: string): string {
+  return raw
     .trim()
     .replace(/[μµ]/g, 'µ')
     .replace(/\bmicro\s*/i, 'µ');
-  const key = micro.toLowerCase().replace(/[\s.]/g, '');
-  return SPELLINGS[key] ?? micro;
+}
+
+function spellingKey(unit: string): string {
+  return unit.toLowerCase().replace(/[\s.]/g, '');
+}
+
+/** Normalizes the spelling of a printed unit. Unknown units come back trimmed with a normalized micro sign. */
+export function normalizeUnit(raw: string): string {
+  const micro = withMicroSign(raw);
+  return SPELLINGS[spellingKey(micro)] ?? micro;
+}
+
+/** Every canonical spelling normalizeUnit can return. */
+export const KNOWN_UNITS: ReadonlySet<string> = new Set(Object.values(SPELLINGS));
+
+/** True when the printed unit is a spelling normalizeUnit knows: a real unit, never an OCR slip. */
+export function isKnownUnit(raw: string): boolean {
+  return Object.hasOwn(SPELLINGS, spellingKey(withMicroSign(raw)));
+}
+
+/** Letters OCR mistakes for one another, folded to one letter (spec 2026-10-16 §5.2). The m class comes from the rn -> m replace in unitShape. */
+const SHAPE_CLASSES: Record<string, string> = {
+  µ: 'u',
+  μ: 'u',
+  u: 'u',
+  p: 'u',
+  y: 'u',
+  l: 'l',
+  '1': 'l',
+  i: 'l',
+  '|': 'l',
+  o: 'o',
+  '0': 'o',
+};
+
+/** How a unit looks to OCR: lower case, without the marks it loses, confusable letters folded. */
+export function unitShape(text: string): string {
+  const flat = text
+    .toLowerCase()
+    .replace(/[\s./^]/g, '')
+    .replace(/rn/g, 'm');
+  return [...flat].map((ch) => SHAPE_CLASSES[ch] ?? ch).join('');
+}
+
+/**
+ * The unit OCR mangled, when exactly one of the entry's units has its shape. Null otherwise:
+ * a unit fixed by hand is better than a wrong one.
+ */
+export function repairOcrUnit(raw: string, candidates: readonly string[]): string | null {
+  if (isKnownUnit(raw)) return null;
+  const shape = unitShape(raw);
+  if (shape === '') return null;
+  const hits = candidates.filter((unit) => unitShape(unit) === shape);
+  return hits.length === 1 ? hits[0]! : null;
 }
 
 function factorToCanonical(analyte: Analyte, unit: string): number | null {

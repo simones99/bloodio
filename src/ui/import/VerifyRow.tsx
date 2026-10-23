@@ -8,6 +8,7 @@ import {
   withReading,
   type EditableRow,
 } from '../../parsers/editable';
+import type { RowFlag } from '../../parsers/types';
 import { Rail } from '../components/Rail';
 import { formatDateLong, it } from '../i18n/it';
 import shared from '../styles/shared.module.css';
@@ -22,6 +23,15 @@ interface VerifyRowProps {
   onDelete(): void;
   onPickAnalyte(): void;
   onUseSuggestion(analyteId: string): void;
+  /** Opens the page the row was read from; absent when there is no page to show. */
+  onViewOriginal?(): void;
+}
+
+function flagText(flag: RowFlag, row: EditableRow): string {
+  if (flag === 'ocr-unit') {
+    return it.verify.ocrUnit(row.origin?.rawUnit ?? '', row.origin?.initialUnit ?? row.unit);
+  }
+  return it.verify.flags[flag];
 }
 
 function analyteLabel(row: EditableRow, custom: CustomAnalyte[]): string | null {
@@ -50,6 +60,7 @@ export function VerifyRow({
   onDelete,
   onPickAnalyte,
   onUseSuggestion,
+  onViewOriginal,
 }: VerifyRowProps) {
   const pending = isPending(row);
   const problems = rowProblems(row);
@@ -74,6 +85,11 @@ export function VerifyRow({
             <p className={styles.printed}>{row.name}</p>
           )}
         </div>
+        {onViewOriginal && (
+          <button type="button" className={styles.original} onClick={onViewOriginal}>
+            {it.verify.viewOriginal}
+          </button>
+        )}
         <span className={styles.state}>
           {row.confirmed ? it.verify.confirmed : pending ? '' : it.verify.readWell}
         </span>
@@ -175,7 +191,7 @@ export function VerifyRow({
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M12 3 2.5 20h19zM12 10v4.5M12 17.5v.1" />
           </svg>
-          {it.verify.flags[flag]}
+          {flagText(flag, row)}
         </p>
       ))}
 

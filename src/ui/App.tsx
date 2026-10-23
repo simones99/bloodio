@@ -6,6 +6,7 @@ import { useServices } from './app/services';
 import { useQuery } from './app/use-query';
 import { ImportSessionProvider } from './import/import-session';
 import { AnalyteRoute } from './pages/AnalytePage';
+import { ComparePage } from './pages/ComparePage';
 import { HomePage } from './pages/HomePage';
 import { ImportPage } from './pages/ImportPage';
 import { ReportDetailPage } from './pages/ReportDetailPage';
@@ -42,6 +43,7 @@ export function App() {
             <Route index element={<HomePage />} />
             <Route path="reports" element={<ReportsPage />} />
             <Route path="reports/:id" element={<ReportDetailPage />} />
+            <Route path="compare" element={<ComparePage />} />
             <Route path="analytes" element={<ValuesPage />} />
             <Route path="analytes/:ref" element={<AnalyteRoute />} />
             <Route path="import" element={<ImportPage />} />

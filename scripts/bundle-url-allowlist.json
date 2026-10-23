@@ -44,11 +44,39 @@
     "reason": "pdf.js worker: licence header comment; never fetched"
   },
   {
+    "prefix": "https://bit.ly/wb-precache",
+    "reason": "Workbox: documentation link inside a console warning about precache entries without revision; never fetched"
+  },
+  {
     "prefix": "http://www.xfa.org/schema/",
     "reason": "pdf.js worker: XFA XML namespace identifiers; never fetched"
   },
   {
     "prefix": "http://ns.adobe.com/",
     "reason": "pdf.js worker: Adobe XML namespace identifiers; never fetched"
+  },
+  {
+    "prefix": "https://cdn.jsdelivr.net/npm/tesseract.js-core@v",
+    "reason": "tesseract.js worker: default corePath, overridden by src/ocr/tesseract-engine.ts (ocr/<hash>/core/<build>) and blocked by connect-src 'self'; never fetched"
+  },
+  {
+    "prefix": "https://cdn.jsdelivr.net/npm/@tesseract.js-data/",
+    "reason": "tesseract.js worker: default langPath, overridden by src/ocr/tesseract-engine.ts (ocr/<hash>/lang) and blocked by connect-src 'self'; never fetched"
+  },
+  {
+    "prefix": "https://cdn.jsdelivr.net/npm/tesseract.js@v",
+    "reason": "tesseract.js: default workerPath, overridden by src/ocr/tesseract-engine.ts (ocr/<hash>/worker.min.js); a worker script URL is governed by worker-src 'self'; never fetched"
+  },
+  {
+    "prefix": "https://github.com/naptha/tesseract.js",
+    "reason": "tesseract.js: repository, bugs and homepage fields of its package.json, bundled as data; never fetched"
+  },
+  {
+    "prefix": "https://opencollective.com/tesseractjs",
+    "reason": "tesseract.js: funding field of its package.json, bundled as data; never fetched"
+  },
+  {
+    "prefix": "https://rolldown.rs/in-depth/bundling-cjs",
+    "reason": "Rolldown runtime: documentation link inside the error message of an unsupported require(); never fetched"
   }
 ]

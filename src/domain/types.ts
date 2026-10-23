@@ -49,10 +49,16 @@ export interface Analyte {
   siUnit?: string;
   /**
    * Physically plausible values in canonical unit. Used only to disambiguate "1.029" vs "1029".
-   * Covers every value a lab can report (spec 2026-10-21 §4): a narrower range picks a wrong
-   * reading silently.
+   * Always covers `reportable` (spec 2026-10-21 §4): a narrower range picks a wrong reading silently.
    */
   plausible?: PlausibleRange;
+  /**
+   * Values a lab can report with a common method: the manufacturer's measuring range extended by
+   * the largest dilution its method sheet allows, in canonical unit (spec 2026-10-16 §6.6). Read
+   * only by the OCR trust rule, where a value outside keeps the row in review. Never used to read
+   * numbers: that is `plausible`, and a narrow range there would pick the wrong reading silently.
+   */
+  reportable?: PlausibleRange;
 }
 
 export type Comparator = '<' | '>' | '<=' | '>=';

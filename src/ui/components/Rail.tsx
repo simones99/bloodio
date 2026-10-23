@@ -5,6 +5,8 @@ import styles from './Rail.module.css';
 
 interface RailProps {
   value: number | null;
+  /** The older value in a comparison, drawn as a ring on the same range. */
+  from?: number | null;
   refMin: number | null;
   refMax: number | null;
   comparator?: Comparator | null;
@@ -20,6 +22,7 @@ interface RailProps {
  */
 export function Rail({
   value,
+  from = null,
   refMin,
   refMax,
   comparator = null,
@@ -27,17 +30,49 @@ export function Rail({
   animateIndex,
 }: RailProps) {
   const position = value === null ? null : railPosition(value, refMin, refMax);
-  if (!position) return <div className={styles.rail} data-empty aria-hidden="true" />;
+  const previous = from === null ? null : railPosition(from, refMin, refMax);
+  if (!position && !previous) return <div className={styles.rail} data-empty aria-hidden="true" />;
 
-  const kind = position.state !== 'in' ? 'out' : comparator ? 'open' : watch ? 'watch' : 'in';
-  const style = { '--x': `${position.x}%`, '--i': animateIndex ?? 0 } as CSSProperties;
+  const kind = !position
+    ? null
+    : position.state !== 'in'
+      ? 'out'
+      : comparator
+        ? 'open'
+        : watch
+          ? 'watch'
+          : 'in';
   return (
     <div
       className={styles.rail}
       aria-hidden="true"
       data-animate={animateIndex !== undefined || undefined}
     >
-      <i className={styles.dot} data-kind={kind} style={style} />
+      {previous && position && (
+        <i
+          className={styles.link}
+          style={
+            {
+              '--from': `${Math.min(previous.x, position.x)}%`,
+              '--to': `${Math.max(previous.x, position.x)}%`,
+            } as CSSProperties
+          }
+        />
+      )}
+      {previous && (
+        <i
+          className={styles.dot}
+          data-kind="from"
+          style={{ '--x': `${previous.x}%` } as CSSProperties}
+        />
+      )}
+      {position && (
+        <i
+          className={styles.dot}
+          data-kind={kind ?? undefined}
+          style={{ '--x': `${position.x}%`, '--i': animateIndex ?? 0 } as CSSProperties}
+        />
+      )}
     </div>
   );
 }

@@ -1,0 +1,85 @@
+.sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  background: var(--grafite);
+}
+
+.head {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: calc(12px + env(safe-area-inset-top)) var(--gutter) 4px;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 650;
+}
+
+.read {
+  flex: none;
+  padding: 0 var(--gutter) 12px;
+  font-size: 15px;
+  font-stretch: var(--dense-stretch);
+  overflow-wrap: anywhere;
+}
+
+/* The page is moved and zoomed by the sheet, not scrolled: touch gestures stay with it. */
+.page {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.status {
+  padding: 24px var(--gutter);
+  color: var(--cenere);
+}
+
+/* The page as printed: white in every theme, never inverted. One CSS px per unit of the original,
+   scaled by the transform set by the sheet. */
+.paper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  background: #ffffff;
+}
+
+.paper canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.paper svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.zoom {
+  flex: none;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px var(--gutter) calc(12px + env(safe-area-inset-bottom));
+}
+
+/* The row: an accent border and a light fill, the rest of the page left as it is. */
+.paper polygon {
+  fill: var(--arterioso);
+  fill-opacity: 0.12;
+  stroke: var(--arterioso);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}

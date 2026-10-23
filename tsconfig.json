@@ -17,6 +17,7 @@
     "allowJs": true,
     "checkJs": false,
     "noEmit": true,
+    "allowImportingTsExtensions": true,
     "types": ["vite/client", "node"]
   },
   "include": [
@@ -24,6 +25,7 @@
     "tests",
     "e2e",
     "scripts",
+    "tools",
     "vite.config.ts",
     "vitest.config.ts",
     "playwright.config.ts"

@@ -1,13 +1,26 @@
 import type { PositionedPage, PositionedText } from '../parsers/types';
 
+export interface PdfViewport {
+  width: number;
+  height: number;
+}
+
 /** The slice of pdf.js this module needs, so it can be tested with any pdf.js build. */
 export interface PdfPageLike {
-  getViewport(options: { scale: number }): { width: number; height: number };
+  getViewport(options: { scale: number }): PdfViewport;
   getTextContent(): Promise<{ items: unknown[] }>;
+  /** Draws the page, for the OCR of a scan. `canvas` is nullable to match pdf.js's own signature. */
+  render(params: { canvas: HTMLCanvasElement | null; viewport: PdfViewport }): {
+    promise: Promise<unknown>;
+  };
+  /** Frees the page's decoded images; pdf.js keeps them after a render otherwise. */
+  cleanup?(): unknown;
 }
 export interface PdfDocumentLike {
   numPages: number;
   getPage(pageNumber: number): Promise<PdfPageLike>;
+  /** Frees pdf.js's worker and the parsed document. */
+  destroy?(): Promise<unknown>;
 }
 
 interface PdfTextItem {

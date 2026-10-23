@@ -26,3 +26,15 @@ export async function buildEmptyPdf(): Promise<Uint8Array> {
   pdf.addPage([595, 842]);
   return pdf.save();
 }
+
+/** A scanned report: one page holding only an image, with no text layer. */
+export async function buildImagePdf(
+  png: Uint8Array,
+  width: number,
+  height: number,
+): Promise<Uint8Array> {
+  const pdf = await PDFDocument.create();
+  const image = await pdf.embedPng(png);
+  pdf.addPage([width, height]).drawImage(image, { x: 0, y: 0, width, height });
+  return pdf.save();
+}

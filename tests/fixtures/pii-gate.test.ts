@@ -2,7 +2,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { findPersonalPatterns } from '../../scripts/lib/pii-patterns.mjs';
-import { FIXTURE_NAMES, loadFixture } from './load';
+import { FIXTURE_NAMES, loadFixture, loadOcrFixture, OCR_FIXTURE_NAMES } from './load';
 
 const DIR = 'tests/fixtures';
 
@@ -28,10 +28,12 @@ describe('fixtures', () => {
   });
 
   it('carry only the placeholder birth date', () => {
-    for (const name of FIXTURE_NAMES) {
-      const text = loadFixture(name)
-        .pages.flatMap((p) => p.items.map((i) => i.text))
-        .join('\n');
+    const texts = [
+      ...FIXTURE_NAMES.map((name) => [name, loadFixture(name).pages] as const),
+      ...OCR_FIXTURE_NAMES.map((name) => [name, loadOcrFixture(name).pages] as const),
+    ];
+    for (const [name, pages] of texts) {
+      const text = pages.flatMap((p) => p.items.map((i) => i.text)).join('\n');
       const births = [...text.matchAll(/Nato il:?\s*(\d{2}\/\d{2}\/\d{4})/g)].map((m) => m[1]);
       expect(births.length, name).toBeGreaterThan(0);
       for (const birth of births) expect(birth, name).toBe('01/01/1980');
@@ -45,6 +47,14 @@ describe('fixtures', () => {
         for (const item of page.items) {
           expect(findPersonalPatterns(item.text), `${name}: "${item.text}"`).toEqual([]);
         }
+      }
+    }
+  });
+
+  it.each(OCR_FIXTURE_NAMES)('OCR fixture %s contains no personal-data pattern', (name) => {
+    for (const page of loadOcrFixture(name).pages) {
+      for (const item of page.items) {
+        expect(findPersonalPatterns(item.text), `${name}: "${item.text}"`).toEqual([]);
       }
     }
   });

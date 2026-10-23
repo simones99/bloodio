@@ -1,7 +1,7 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './test';
 import { buildPdfFromFixture } from '../tests/fixtures/build-pdf';
 import type { FixtureName } from '../tests/fixtures/load';
-import { watchNetwork } from './network';
 
 async function importFixture(page: Page, fixture: FixtureName) {
   await page.goto('/#/import');
@@ -15,8 +15,7 @@ async function importFixture(page: Page, fixture: FixtureName) {
   await expect(page.getByText('Referto salvato')).toBeVisible();
 }
 
-test('from a report to the history of one of its values', async ({ page, baseURL }) => {
-  const external = watchNetwork(page, baseURL!);
+test('from a report to the history of one of its values', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Ho capito, inizia' }).click();
 
@@ -36,12 +35,9 @@ test('from a report to the history of one of its values', async ({ page, baseURL
 
   await page.getByRole('button', { name: 'Indietro' }).click();
   await expect(page.getByRole('heading', { name: '20 agosto 2022' })).toBeVisible();
-
-  expect(external).toEqual([]);
 });
 
-test('a point of the chart opens its report', async ({ page, baseURL }) => {
-  const external = watchNetwork(page, baseURL!);
+test('a point of the chart opens its report', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Ho capito, inizia' }).click();
   await importFixture(page, 'proavis-2021-10-04');
@@ -51,10 +47,9 @@ test('a point of the chart opens its report', async ({ page, baseURL }) => {
   await page.getByRole('button', { name: /^4 ott 2021: 1,9 / }).click();
   await page.getByRole('link', { name: 'Apri il referto' }).click();
   await expect(page.getByRole('heading', { name: '4 ottobre 2021' })).toBeVisible();
-  expect(external).toEqual([]);
 });
 
-test('the chart is saved as a PNG on the device', async ({ page, baseURL }) => {
+test('the chart is saved as a PNG on the device', async ({ page }) => {
   // Desktop browsers that can share files would open a share sheet: force the download path.
   await page.addInitScript(() => {
     Object.defineProperty(Navigator.prototype, 'canShare', {
@@ -62,7 +57,6 @@ test('the chart is saved as a PNG on the device', async ({ page, baseURL }) => {
       configurable: true,
     });
   });
-  const external = watchNetwork(page, baseURL!);
   await page.goto('/');
   await page.getByRole('button', { name: 'Ho capito, inizia' }).click();
   await importFixture(page, 'proavis-2021-10-04');
@@ -76,11 +70,9 @@ test('the chart is saved as a PNG on the device', async ({ page, baseURL }) => {
   const bytes = await (await file.createReadStream()).toArray();
   const head = Buffer.concat(bytes).subarray(0, 8);
   expect([...head]).toEqual([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-  expect(external).toEqual([]);
 });
 
-test('the values list finds an entry and opens its history', async ({ page, baseURL }) => {
-  const external = watchNetwork(page, baseURL!);
+test('the values list finds an entry and opens its history', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Ho capito, inizia' }).click();
   await importFixture(page, 'proavis-2022-08-20');
@@ -90,5 +82,4 @@ test('the values list finds an entry and opens its history', async ({ page, base
   await page.getByLabel('Cerca').fill('tsh');
   await page.getByRole('link', { name: /^TSH/ }).click();
   await expect(page.getByRole('heading', { level: 1, name: 'TSH' })).toBeVisible();
-  expect(external).toEqual([]);
 });

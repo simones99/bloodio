@@ -25,7 +25,19 @@ export interface EditableRow {
   /** The user looked at a doubtful row and accepted it. */
   confirmed: boolean;
   /** Where the row sits on the original page, for "Vedi originale". Null for manual rows. */
-  origin: { page: number; bbox: BBox; rawValue: string; initialValueText: string } | null;
+  origin: {
+    page: number;
+    bbox: BBox;
+    rawName: string;
+    rawValue: string;
+    initialValueText: string;
+    /** The unit as printed, or as OCR read it. */
+    rawUnit: string;
+    /** The unit the draft chose, before any edit: the repaired one for an `ocr-unit` row. */
+    initialUnit: string;
+    /** The range as printed; continuation lines are joined with "\n". */
+    rawRef: string;
+  } | null;
   /** Unit/range copied from the analyte's most recent report, until the user edits them. */
   suggestedReference: { sampleDate: string } | null;
   /** The stored measurement this row came from, so an edit keeps its id. Null for a new row. */
@@ -72,8 +84,12 @@ export function toEditableRow(draft: DraftRow, key: string): EditableRow {
     origin: {
       page: draft.page,
       bbox: draft.bbox,
+      rawName: draft.rawName,
       rawValue: draft.rawValue,
       initialValueText: valueText,
+      rawUnit: draft.rawUnit,
+      initialUnit: parsed.unit ?? '',
+      rawRef: draft.rawRef,
     },
     suggestedReference: null,
     measurementId: null,

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { describe, expect, it, vi } from 'vitest';
 import { ServicesProvider, type Services } from '../../src/ui/app/services';
 import { ImportSessionProvider, useImportSession } from '../../src/ui/import/import-session';
@@ -21,6 +21,12 @@ function SessionProbe() {
   );
 }
 
+function CompareProbe() {
+  const location = useLocation();
+  const from = (location.state as { from?: string } | null)?.from ?? '-';
+  return <p>{`confronto ${location.search} da ${from}`}</p>;
+}
+
 function renderAt(path: string, services: Services) {
   render(
     <ServicesProvider services={services}>
@@ -29,6 +35,7 @@ function renderAt(path: string, services: Services) {
           <Routes>
             <Route path="/reports" element={<ReportsPage />} />
             <Route path="/reports/:id" element={<ReportDetailPage />} />
+            <Route path="/compare" element={<CompareProbe />} />
             <Route path="/import" element={<p>pagina di caricamento</p>} />
             <Route path="/import/verify" element={<SessionProbe />} />
             <Route path="/analytes/:ref" element={<p>pagina valore</p>} />
@@ -289,5 +296,61 @@ describe('ReportDetailPage', () => {
     renderAt(`/reports/${id}`, services);
     expect(await screen.findByText('5,5')).toBeInTheDocument();
     expect(screen.getByText('sul referto: 99 mg/dL')).toBeInTheDocument();
+  });
+
+  it('compares with the previous report sharing an entry in one tap', async () => {
+    const { services, id } = await seeded();
+    const previous = await services.reports.saveReport(reportInput({ sampleDate: '2021-10-04' }), [
+      measurementInput({ value: 5.31, valueText: '5,31' }),
+    ]);
+    renderAt(`/reports/${id}`, services);
+    await userEvent
+      .setup()
+      .click(await screen.findByRole('button', { name: 'Confronta con il precedente' }));
+    expect(screen.getByText(`confronto ?a=${previous}&b=${id} da ${id}`)).toBeInTheDocument();
+  });
+
+  it('offers a choice when no earlier report shares an entry', async () => {
+    const { services, id } = await seeded(); // the 30 Aug 2021 report has no values
+    renderAt(`/reports/${id}`, services);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: 'Confronta con…' }));
+    const dialog = screen.getByRole('dialog', { name: 'Confronta il 20 agosto 2022 con' });
+    await user.click(within(dialog).getByRole('radio', { name: /30 agosto 2021/ }));
+    await user.click(within(dialog).getByRole('button', { name: 'Confronta' }));
+    expect(
+      screen.getByText(new RegExp(`^confronto \\?a=.+&b=${id} da ${id}$`)),
+    ).toBeInTheDocument();
+  });
+
+  it('returns focus to the compare button when the choice is cancelled', async () => {
+    const { services, id } = await seeded();
+    renderAt(`/reports/${id}`, services);
+    const user = userEvent.setup();
+    await user.click(await screen.findByRole('button', { name: 'Confronta con…' }));
+    await user.click(within(screen.getByRole('dialog')).getByRole('button', { name: 'Annulla' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Confronta con…' }));
+  });
+
+  it('offers no comparison until a second report exists', async () => {
+    const services = await testServices();
+    const id = await services.reports.saveReport(reportInput(), [measurementInput()]);
+    const refs = vi.spyOn(services.reports, 'listEntryRefsByReport');
+    renderAt(`/reports/${id}`, services);
+    expect(await screen.findByRole('button', { name: 'Modifica referto' })).toBeInTheDocument();
+    // The button has a query of its own: let it settle, or its absence proves nothing.
+    await waitFor(() => expect(refs).toHaveBeenCalled());
+    await act(async () => {
+      await refs.mock.results[0]!.value;
+    });
+    expect(screen.queryByRole('button', { name: /^Confronta/ })).toBeNull();
+
+    await services.reports.saveReport(reportInput({ sampleDate: '2021-10-04' }), [
+      measurementInput({ value: 5.31, valueText: '5,31' }),
+    ]);
+    expect(
+      await screen.findByRole('button', { name: 'Confronta con il precedente' }),
+    ).toBeInTheDocument();
   });
 });

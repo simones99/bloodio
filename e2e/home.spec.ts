@@ -1,6 +1,6 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './test';
 import { buildPdfFromFixture } from '../tests/fixtures/build-pdf';
-import { watchNetwork } from './network';
 
 const REMINDER = 'Ci sono dati non ancora esportati.';
 
@@ -19,8 +19,7 @@ async function startWithOneReport(page: Page) {
   await page.getByRole('link', { name: 'Home' }).click();
 }
 
-test('the Home sums up the latest report, and its reminder can wait', async ({ page, baseURL }) => {
-  const external = watchNetwork(page, baseURL!);
+test('the Home sums up the latest report, and its reminder can wait', async ({ page }) => {
   await startWithOneReport(page);
 
   await expect(
@@ -38,14 +37,9 @@ test('the Home sums up the latest report, and its reminder can wait', async ({ p
   await page.reload();
   await expect(page.getByRole('link', { name: /^Ultimo referto/ })).toBeVisible();
   await expect(page.getByText(REMINDER)).toBeHidden();
-
-  expect(external).toEqual([]);
 });
 
-test('"Esporta ora" on the Home downloads the data and clears the reminder', async ({
-  page,
-  baseURL,
-}) => {
+test('"Esporta ora" on the Home downloads the data and clears the reminder', async ({ page }) => {
   // Desktop and emulated phones may share files: force the download path, as the settings test does.
   await page.addInitScript(() => {
     Object.defineProperty(Navigator.prototype, 'canShare', {
@@ -53,13 +47,10 @@ test('"Esporta ora" on the Home downloads the data and clears the reminder', asy
       configurable: true,
     });
   });
-  const external = watchNetwork(page, baseURL!);
   await startWithOneReport(page);
 
   const download = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Esporta ora' }).click();
   expect((await download).suggestedFilename()).toMatch(/^bloodio-\d{4}-\d{2}-\d{2}\.json$/);
   await expect(page.getByText(REMINDER)).toBeHidden();
-
-  expect(external).toEqual([]);
 });

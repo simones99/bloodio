@@ -3,7 +3,13 @@ import { hematology } from './hematology';
 import { electrolytes, glucose, iron, kidney, lipids, vitamins } from './metabolic';
 import { coagulation, inflammation, other, proteins } from './misc';
 import { hormones, liver, thyroid } from './organs';
+import { REPORTABLE } from './reportable';
 import { urine } from './urine';
+
+function withReportable(analyte: Analyte): Analyte {
+  const reportable = REPORTABLE[analyte.id];
+  return reportable ? { ...analyte, reportable } : analyte;
+}
 
 /** The canonical analyte list. Data only: add analytes here, never scatter them in logic. */
 export const CATALOG: readonly Analyte[] = [
@@ -22,7 +28,7 @@ export const CATALOG: readonly Analyte[] = [
   ...proteins,
   ...other,
   ...urine,
-];
+].map(withReportable);
 
 const BY_ID = new Map(CATALOG.map((analyte) => [analyte.id, analyte]));
 

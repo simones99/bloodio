@@ -68,6 +68,9 @@ a.name {
 }
 
 .actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
   padding: 4px var(--gutter) 0;
 }
 

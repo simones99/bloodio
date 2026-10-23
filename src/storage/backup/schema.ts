@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import { UNIT_SYSTEMS } from '../../domain/types';
 
+// Zod would probe for eval with `new Function`; the Content Security Policy forbids eval and
+// reports the probe as a violation. A backup is small: the compiled fast path buys nothing.
+z.config({ jitless: true });
+
 /** Bump together with the Dexie schema version whenever the stored shape changes. */
 export const EXPORT_VERSION = 1;
 

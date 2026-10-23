@@ -1,12 +1,14 @@
-import type { IngestErrorCode } from '../../ingest/ingest-file';
-import type { WatchSide } from '../../domain/trend';
-import type { Category, ReportType } from '../../domain/types';
-import type { RowProblem } from '../../parsers/editable';
-import type { RowFlag } from '../../parsers/types';
+// Extensions: vite.config.ts loads this file for the web manifest.
+import type { IngestErrorCode } from '../../ingest/ingest-file.ts';
+import type { WatchSide } from '../../domain/trend.ts';
+import type { Category, ReportType } from '../../domain/types.ts';
+import type { RowProblem } from '../../parsers/editable.ts';
+import type { RowFlag } from '../../parsers/types.ts';
 
 /** Every string the user reads. Italian only for now; a second language is a second file of this shape. */
 export const it = {
   appName: 'Bloodio',
+  appDescription: 'I tuoi esami del sangue nel tempo, solo sul tuo dispositivo.',
   nav: {
     main: 'Principale',
     home: 'Home',
@@ -73,6 +75,8 @@ export const it = {
   detail: {
     back: 'Referti',
     edit: 'Modifica referto',
+    compareWithPrevious: 'Confronta con il precedente',
+    compareWith: 'Confronta con…',
     notes: 'Note',
     delete: 'Elimina referto',
     deleteTitle: 'Eliminare questo referto?',
@@ -193,24 +197,88 @@ export const it = {
     },
   },
 
+  compare: {
+    title: 'Confronto',
+    backTo: (date: string) => `Referto del ${date}`,
+    older: 'Prima',
+    newer: 'Dopo',
+    change: 'Cambia referto',
+    onlyCommon: 'Solo in comune',
+    summary: (common: number, single: number) => {
+      const inCommon = common === 1 ? '1 voce in comune' : `${common} voci in comune`;
+      return single === 0 ? inCommon : `${inCommon} · ${single} in un solo referto`;
+    },
+    noCommon: 'Nessuna voce in comune',
+    noneInCommon: 'Nessuna voce in comune tra questi due referti.',
+    changed: 'Cambiati rispetto al range',
+    noneChanged: 'Nessuna voce è entrata o uscita dal range.',
+    transition: {
+      'now-above': '↑ ora sopra',
+      'now-below': '↓ ora sotto',
+      'now-out': 'ora fuori range',
+      'now-in': 'ora nel range',
+    },
+    transitionSpoken: {
+      'now-above': 'ora sopra il range',
+      'now-below': 'ora sotto il range',
+      'now-out': 'ora fuori range',
+      'now-in': 'ora nel range',
+    },
+    onlyIn: (date: string) => `solo nel referto del ${date}`,
+    differentUnits: 'unità diverse, non confrontabili',
+    limit: {
+      older: 'il valore precedente è un limite, nessuna differenza',
+      newer: 'il valore recente è un limite, nessuna differenza',
+      both: 'i due valori sono limiti, nessuna differenza',
+    },
+    rangeChanged: (from: string, to: string) => `range cambiato: ${from} → ${to}`,
+    noRange: 'nessun range',
+    unchanged: 'invariato',
+    underOnePercent: '< 1%',
+    plus: 'più',
+    minus: 'meno',
+    underOnePercentSpoken: 'sotto l’1%',
+    fromTo: (older: string, newer: string) => `da ${older} a ${newer}`,
+    notFound: 'Questo confronto non è più disponibile: uno dei due referti è stato eliminato.',
+    sameReport: 'Scegli due referti diversi.',
+    toReports: 'Vai ai referti',
+    loadFailed: 'Non sono riuscito a leggere i referti. Riprova.',
+    sheetTitle: (date: string) => `Confronta il ${date} con`,
+    inCommon: (n: number) =>
+      n === 0 ? 'nessuna voce in comune' : n === 1 ? '1 voce in comune' : `${n} voci in comune`,
+    previous: 'precedente',
+    cancel: 'Annulla',
+    confirm: 'Confronta',
+  },
+
   importer: {
     title: 'Carica un referto',
-    lead: 'Scegli il PDF del laboratorio. Viene letto su questo dispositivo e non lascia mai il telefono.',
-    choose: 'Scegli un PDF',
+    lead: 'Scegli il PDF del laboratorio, oppure le foto o le scansioni delle pagine. Viene letto su questo dispositivo e non lascia mai il telefono.',
+    choose: 'Scegli il referto',
     manual: 'Inserisci i valori a mano',
     reading: 'Lettura del referto…',
+    ocrLoading: 'Preparazione della lettura…',
+    ocrPage: (page: number, pages: number) =>
+      pages === 1 ? 'Lettura della pagina…' : `Lettura della pagina ${page} di ${pages}…`,
+    cancel: 'Annulla',
+    cancelled: 'Lettura annullata.',
     duplicateTitle: 'Questo file è già stato caricato',
     duplicateBody: (date: string) => `Corrisponde al referto del ${date}.`,
     openExisting: 'Apri il referto',
     continueAnyway: 'Carica comunque',
     errors: {
-      'unsupported-type': 'Questo tipo di file non è supportato. Scegli il PDF del referto.',
-      'needs-ocr':
-        'Questo file è una scansione o una foto: non contiene testo da leggere. La lettura delle immagini arriva con un prossimo aggiornamento.',
+      'unsupported-type':
+        'Questo tipo di file non è supportato. Scegli il PDF del referto o le foto delle pagine.',
       password: 'Questo PDF è protetto da password. Togli la protezione e riprova.',
-      unreadable: 'Non riesco ad aprire questo PDF: il file sembra danneggiato.',
+      unreadable: 'Non riesco a leggere questo file: sembra danneggiato.',
+      'mixed-selection': 'Scegli un solo PDF, oppure una o più immagini.',
+      'heic-unsupported': 'Questo browser non apre le foto HEIC. Salvale in JPEG e riprova.',
+      'ocr-unavailable':
+        'Non riesco a preparare la lettura delle immagini. La prima volta serve la connessione.',
     } satisfies Record<IngestErrorCode, string>,
     noRows: 'Non ho trovato valori in questo PDF. Controlla che sia un referto di laboratorio.',
+    noRowsOcr:
+      'Non ho trovato valori nelle pagine lette. Prova con una foto o una scansione più nitida, dritta e ben illuminata, oppure inserisci i valori a mano.',
   },
 
   verify: {
@@ -221,6 +289,9 @@ export const it = {
         ? `${read}. Niente viene salvato finché non confermi.`
         : `${read}, ${pending} da controllare. Niente viene salvato finché non confermi.`;
     },
+    ocrNotice: 'Valori letti da un’immagine: confronta ognuno con il referto prima di salvare.',
+    ocrNoticeTrusted:
+      'Valori letti da un’immagine: quelli segnati vanno confrontati con il referto, gli altri controllali comunque a colpo d’occhio.',
     sampleDate: 'Data del prelievo',
     lab: 'Laboratorio',
     type: 'Tipo',
@@ -243,6 +314,7 @@ export const it = {
     confirmed: 'controllato',
     readWell: 'letto bene',
     deleteRow: 'Elimina riga',
+    viewOriginal: 'Vedi originale',
     addRow: 'Aggiungi un valore',
     save: 'Salva referto',
     saving: 'Salvataggio…',
@@ -252,6 +324,8 @@ export const it = {
     saveAnyway: 'Salva comunque',
     missingDate: 'Indica la data del prelievo.',
     fixRows: (n: number) => (n === 1 ? 'Una riga è incompleta.' : `${n} righe sono incomplete.`),
+    ocrUnit: (read: string, unit: string) =>
+      `Unità letta «${read}», interpretata come ${unit}. Controlla con il referto.`,
     flags: {
       'ambiguous-number':
         'Il punto può essere decimale o migliaia. Controlla il numero sul referto.',
@@ -264,8 +338,8 @@ export const it = {
       'ambiguous-analyte': 'Più voci hanno questo nome. Scegli quella giusta.',
       'suggested-analyte': 'Il nome non corrisponde esattamente a nessuna voce.',
       'unknown-analyte': 'Non è nel catalogo. Scegli una voce o salvala come personalizzata.',
-      'low-ocr': 'Il testo era poco leggibile. Confronta con il referto.',
-    } satisfies Record<RowFlag, string>,
+      'low-ocr': 'Letto da un’immagine. Confronta con il referto.',
+    } satisfies Record<Exclude<RowFlag, 'ocr-unit'>, string>,
     problems: {
       'no-analyte': 'Scegli la voce.',
       'no-value': 'Scrivi il valore.',
@@ -273,6 +347,17 @@ export const it = {
       'bad-ref-max': 'Il massimo non è un numero.',
       'ref-order': 'Il minimo è più alto del massimo.',
     } satisfies Record<RowProblem, string>,
+  },
+
+  original: {
+    title: (page: number, pages: number) => `Pagina ${page} di ${pages}`,
+    close: 'Chiudi',
+    preparing: 'Preparazione della pagina…',
+    failed: 'Non riesco a mostrare la pagina.',
+    alt: (page: number, name: string) => `Pagina ${page} del referto, riga ${name} evidenziata`,
+    zoomIn: 'Ingrandisci',
+    zoomOut: 'Riduci',
+    fit: 'Adatta alla larghezza',
   },
 
   picker: {
@@ -287,7 +372,8 @@ export const it = {
   settings: {
     title: 'Impostazioni',
     keepOriginal: 'Conserva il file originale',
-    keepOriginalHint: 'Salva anche il PDF accanto ai valori. Occupa più spazio sul dispositivo.',
+    keepOriginalHint:
+      'Salva anche il file originale (PDF o foto) accanto ai valori. Occupa più spazio sul dispositivo.',
     disclaimer: 'Cosa fa e cosa non fa Bloodio',
     version: (v: string) => `Versione ${v}`,
 
@@ -373,6 +459,18 @@ export const it = {
       notPersisted: 'Il browser può cancellare i dati se manca spazio. Esporta regolarmente.',
       protect: 'Proteggi l’archivio',
       usage: (size: string) => `Spazio usato: ${size}`,
+    },
+
+    app: {
+      title: 'Uso come app',
+      offlinePreparing: 'Sto preparando Bloodio per l’uso senza connessione.',
+      offlineReady: 'Bloodio funziona anche senza connessione.',
+      ocrDownloading: 'Sto scaricando la lettura di foto e scansioni per l’uso senza connessione.',
+      ocrReady: 'Anche la lettura di foto e scansioni funziona senza connessione.',
+      ocrPaused: 'La lettura di foto e scansioni senza connessione non è ancora pronta.',
+      ocrDownload: (size: string) => `Scarica ora (${size})`,
+      install:
+        'Puoi aggiungere Bloodio alla schermata Home e aprirlo come un’app. Su iPhone e iPad tocca Condividi, poi «Aggiungi alla schermata Home». Su Android e sul computer cerca nel menu del browser la voce per installare l’app.',
     },
 
     wipe: {

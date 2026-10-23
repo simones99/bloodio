@@ -103,6 +103,8 @@ export interface ReportRepository {
   listSeries(ref: AnalyteRef): Promise<SeriesPoint[]>;
   /** Every entry with at least one measurement, with its latest two. One read of all data. */
   listLatestPerAnalyte(): Promise<AnalyteLatest[]>;
+  /** For every report, the keys (`analyteRefToString`) of the entries it measures. One read of all data. */
+  listEntryRefsByReport(): Promise<Map<string, Set<string>>>;
   latestReferenceFor(ref: AnalyteRef): Promise<LatestReference | undefined>;
   findDuplicates(query: DuplicateQuery): Promise<Report[]>;
   listLabs(): Promise<string[]>;

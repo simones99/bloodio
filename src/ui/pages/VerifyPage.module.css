@@ -11,6 +11,15 @@
   overflow-y: auto;
 }
 
+.notice {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--testo);
+  background: var(--grafite);
+  font-size: 15px;
+  max-width: 34em;
+}
+
 .fields {
   display: grid;
   grid-template-columns: 1fr 1fr;

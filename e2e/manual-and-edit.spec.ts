@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test';
 
 test('a manually entered report is saved without a file and can be edited later', async ({
   page,

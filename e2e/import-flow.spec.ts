@@ -1,9 +1,7 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test';
 import { buildPdfFromFixture } from '../tests/fixtures/build-pdf';
-import { watchNetwork } from './network';
 
-test('load a PDF, verify, save, and find it in the list', async ({ page, baseURL }) => {
-  const external = watchNetwork(page, baseURL!);
+test('load a PDF, verify, save, and find it in the list', async ({ page }) => {
   await page.goto('/');
 
   await page.getByRole('button', { name: 'Ho capito, inizia' }).click();
@@ -39,8 +37,6 @@ test('load a PDF, verify, save, and find it in the list', async ({ page, baseURL
   await page.getByRole('link', { name: 'Referti' }).first().click();
   await expect(page.getByRole('link', { name: /20 ago 2022/ })).toContainText('25 valori');
   await expect(page.getByRole('link', { name: /20 ago 2022/ })).toContainText('11 fuori range');
-
-  expect(external).toEqual([]);
 });
 
 test('a doubtful row is shown first and can be confirmed', async ({ page }) => {
@@ -84,12 +80,12 @@ test('the same file is recognised the second time', async ({ page }) => {
   await expect(page.getByText('Corrisponde al referto del 10 luglio 2021.')).toBeVisible();
 });
 
-test('a photo is refused with a clear message', async ({ page }) => {
+test('a broken photo is reported', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Ho capito, inizia' }).click();
   await page.goto('/#/import');
   await page
     .locator('#report-file')
     .setInputFiles({ name: 'foto.jpg', mimeType: 'image/jpeg', buffer: Buffer.from([1, 2, 3]) });
-  await expect(page.getByRole('alert')).toContainText('Questo file è una scansione o una foto');
+  await expect(page.getByRole('alert')).toContainText('Non riesco a leggere questo file');
 });

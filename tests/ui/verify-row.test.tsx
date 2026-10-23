@@ -12,7 +12,7 @@ import {
 import { buildDraftRow } from '../../src/parsers/draft';
 import { parseReport } from '../../src/parsers/registry';
 import { VerifyRow } from '../../src/ui/import/VerifyRow';
-import { loadFixture } from '../fixtures/load';
+import { loadFixture, loadOcrFixture } from '../fixtures/load';
 import './setup-dom';
 
 const report = parseReport(loadFixture('proavis-2021-10-04'));
@@ -143,5 +143,24 @@ describe('VerifyRow', () => {
     const row = withAnalyte(emptyEditableRow('k'), { analyteId: 'glucose' });
     render(<Harness initial={row} />);
     expect(screen.getByRole('article', { name: 'Glicemia' })).toBeInTheDocument();
+  });
+
+  it('says which unit the OCR read and how it was interpreted', () => {
+    const ocr = parseReport(loadOcrFixture('proavis-2021-07-10'));
+    render(
+      <Harness
+        initial={toEditableRow(
+          ocr.rows.find((r) => r.rawName === 'TSH')!,
+          'k',
+        )}
+      />,
+    );
+    const row = screen.getByRole('article', { name: 'TSH' });
+    expect(
+      within(row).getByText(
+        'Unità letta «pUlml», interpretata come µUI/mL. Controlla con il referto.',
+      ),
+    ).toBeInTheDocument();
+    expect(within(row).getByLabelText('Unità')).toHaveValue('µUI/mL');
   });
 });

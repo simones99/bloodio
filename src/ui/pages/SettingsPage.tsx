@@ -4,6 +4,7 @@ import { useServices } from '../app/services';
 import { useQuery } from '../app/use-query';
 import { it } from '../i18n/it';
 import { DataSection } from '../settings/DataSection';
+import { AppSection } from '../settings/AppSection';
 import { StorageSection } from '../settings/StorageSection';
 import { ThemeSection } from '../settings/ThemeSection';
 import { UnitsSection } from '../settings/UnitsSection';
@@ -45,6 +46,7 @@ export function SettingsPage() {
 
       <DataSection exporter={exporter} />
       <StorageSection />
+      <AppSection />
 
       <section>
         <h2 className={shared.sectionTitle}>{it.settings.disclaimer}</h2>

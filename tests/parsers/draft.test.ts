@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { buildDraftReport, buildDraftRow, needsReview } from '../../src/parsers/draft';
+import {
+  buildDraftReport,
+  buildDraftRow,
+  needsReview,
+  OCR_MAX_CONFIDENCE,
+} from '../../src/parsers/draft';
+import { getAnalyte } from '../../src/domain/catalog';
+import { toCanonicalFactor } from '../../src/domain/units';
 import type { RawRow } from '../../src/parsers/types';
 
 const raw = (overrides: Partial<RawRow>): RawRow => ({
@@ -92,11 +99,8 @@ describe('buildDraftRow', () => {
     expect(row.confidence).toBe(0.7);
   });
 
-  it('caps confidence and flags weak OCR', () => {
+  it('caps confidence', () => {
     expect(buildDraftRow(raw({}), { maxConfidence: 0.5 }).confidence).toBe(0.5);
-    const ocr = buildDraftRow(raw({}), { ocrConfidence: 0.6 });
-    expect(ocr.confidence).toBe(0.6);
-    expect(ocr.flags).toEqual(['low-ocr']);
   });
 });
 
@@ -132,5 +136,93 @@ describe('buildDraftReport', () => {
     });
     expect(report.type).toBe('altro');
     expect(report.warnings).toEqual(['no-rows', 'no-date']);
+  });
+});
+
+describe('buildDraftReport — rows read by OCR', () => {
+  const report = (source: 'ocr' | 'pdf-text', rawRows: RawRow[], maxConfidence?: number) =>
+    buildDraftReport({
+      adapterId: 'proavis',
+      lab: 'PROAVIS',
+      sampleDate: '2021-07-10',
+      source,
+      rawRows,
+      options: maxConfidence === undefined ? undefined : { maxConfidence },
+    });
+
+  it('repairs the units of OCR rows only', () => {
+    expect(report('ocr', [raw({ unit: 'pUlml' })]).rows[0]?.flags).toEqual(['ocr-unit', 'low-ocr']);
+    expect(report('pdf-text', [raw({ unit: 'pUlml' })]).rows[0]?.flags).toEqual(['unit-mismatch']);
+  });
+
+  it('sends every OCR row to review, however clean', () => {
+    const [row] = report('ocr', [raw({})]).rows;
+    expect(row?.flags).toEqual(['low-ocr']);
+    expect(row?.confidence).toBe(OCR_MAX_CONFIDENCE);
+    expect(needsReview(row!)).toBe(true);
+  });
+
+  it('keeps the other flags and a lower confidence', () => {
+    const [row] = report('ocr', [raw({ name: 'Voce che non esiste' })]).rows;
+    expect(row?.flags).toContain('unknown-analyte');
+    expect(row?.flags).toContain('low-ocr');
+    expect(row?.confidence).toBe(0);
+  });
+
+  it('keeps a confidence already below the cap, with one flag', () => {
+    const [row] = report('ocr', [raw({})], 0.5).rows;
+    expect(row?.flags.filter((flag) => flag === 'low-ocr')).toHaveLength(1);
+    expect(row?.confidence).toBe(0.5);
+  });
+
+  it('leaves rows from a PDF text layer as they are', () => {
+    const [row] = report('pdf-text', [raw({})]).rows;
+    expect(row?.flags).toEqual([]);
+    expect(row?.confidence).toBe(1);
+  });
+});
+
+describe('buildDraftRow — units read by OCR', () => {
+  it('repairs a mangled unit to the one unit of the entry with its shape', () => {
+    const row = buildDraftRow(raw({ unit: 'pUlml' }), { ocr: true });
+    expect(row.rawUnit).toBe('pUlml');
+    expect(row.parsed.unit).toBe('µUI/mL');
+    expect(row.flags).toEqual(['ocr-unit']);
+  });
+
+  it('converts the value with the repaired unit', () => {
+    const row = buildDraftRow(
+      raw({ name: 'Glicemia', value: '5,2', unit: 'mmoI/L', ref: '3,9 - 6,1', section: null }),
+      { ocr: true },
+    );
+    expect(row.parsed.unit).toBe('mmol/L');
+    expect(toCanonicalFactor(getAnalyte('glucose')!, row.parsed.unit)).toBe(18.016);
+    expect(row.flags).toEqual(['ocr-unit']);
+  });
+
+  it('repairs the unit before reading the dots', () => {
+    const row = buildDraftRow(
+      raw({ name: 'Glicemia', value: '5.200', unit: 'mmoI/L', ref: '', section: null }),
+      { ocr: true },
+    );
+    expect(row.parsed.value).toBe(5.2);
+    expect(row.parsed.unit).toBe('mmol/L');
+    expect(row.flags).toEqual(['ocr-unit']);
+  });
+
+  it('never turns a real unit into another one', () => {
+    // "pmol/l" has the shape of µmol/L: a factor of a million if it were repaired.
+    const row = buildDraftRow(
+      raw({ name: 'Creatinina', value: '80', unit: 'pmol/l', ref: '', section: null }),
+      { ocr: true },
+    );
+    expect(row.parsed.unit).toBe('pmol/L');
+    expect(row.flags).toEqual(['unit-mismatch']);
+  });
+
+  it('leaves the units of a PDF text layer alone', () => {
+    const row = buildDraftRow(raw({ unit: 'pUlml' }));
+    expect(row.parsed.unit).toBe('pUlml');
+    expect(row.flags).toEqual(['unit-mismatch']);
   });
 });

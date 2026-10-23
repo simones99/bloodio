@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Measurement, Report } from '../../src/domain/types';
+import { identityGeometry } from '../../src/ingest/page-geometry';
 import { parseReport } from '../../src/parsers/registry';
 import type { PositionedText } from '../../src/parsers/types';
 import type { LatestReference } from '../../src/storage/types';
@@ -12,7 +13,7 @@ import { ServicesProvider, type Services } from '../../src/ui/app/services';
 import { ImportSessionProvider, type ImportSession } from '../../src/ui/import/import-session';
 import { ReportDetailPage } from '../../src/ui/pages/ReportDetailPage';
 import { VerifyPage } from '../../src/ui/pages/VerifyPage';
-import { loadFixture } from '../fixtures/load';
+import { loadFixture, loadOcrFixture } from '../fixtures/load';
 import { measurementInput, reportInput } from '../storage/helpers';
 import { testServices } from './fake-services';
 import './setup-dom';
@@ -37,9 +38,8 @@ function buildSession(): ImportSession {
     file: {
       text: text satisfies PositionedText,
       fileHash: 'fake-hash',
-      data: new ArrayBuffer(0),
-      mimeType: 'application/pdf',
-      fileName: 'referto.pdf',
+      files: [{ data: new ArrayBuffer(0), mimeType: 'application/pdf', fileName: 'referto.pdf' }],
+      geometry: text.pages.map(identityGeometry),
     },
     draft,
   };
@@ -127,9 +127,8 @@ describe('VerifyPage — lead sentence', () => {
       file: {
         text,
         fileHash: 'fake-hash',
-        data: new ArrayBuffer(0),
-        mimeType: 'application/pdf',
-        fileName: 'referto.pdf',
+        files: [{ data: new ArrayBuffer(0), mimeType: 'application/pdf', fileName: 'referto.pdf' }],
+        geometry: text.pages.map(identityGeometry),
       },
       draft,
     };
@@ -695,4 +694,60 @@ describe('VerifyPage — save() error handling', () => {
     });
     expect(removeSpy).toHaveBeenCalledTimes(2);
   }, 15000);
+});
+
+describe('VerifyPage — a report read by OCR', () => {
+  function ocrSession(): ImportSession {
+    const text = loadOcrFixture('proavis-2021-07-10');
+    return {
+      mode: 'import',
+      file: {
+        text,
+        fileHash: 'ocr-hash',
+        files: [
+          { data: new Uint8Array([1]).buffer, mimeType: 'image/jpeg', fileName: 'pagina-1.jpg' },
+          { data: new Uint8Array([2, 2]).buffer, mimeType: 'image/jpeg', fileName: 'pagina-2.jpg' },
+        ],
+        geometry: text.pages.map(identityGeometry),
+      },
+      draft: parseReport(text),
+    };
+  }
+
+  it('warns that every value comes from an image', async () => {
+    await renderVerifyPage(await testServices(), ocrSession());
+    expect(await screen.findByText(itText.verify.ocrNotice)).toBeInTheDocument();
+    const row = await screen.findByRole('article', { name: 'TSH' });
+    expect(within(row).getByText(itText.verify.flags['low-ocr'])).toBeInTheDocument();
+  });
+
+  it('points at the marked values when some rows came out trusted', async () => {
+    const session = ocrSession();
+    if (session.mode !== 'import') throw new Error('an import session is expected');
+    const [first, ...rest] = session.draft.rows;
+    const trusted: ImportSession = {
+      ...session,
+      draft: { ...session.draft, rows: [{ ...first!, flags: [], confidence: 1 }, ...rest] },
+    };
+    await renderVerifyPage(await testServices(), trusted);
+    expect(await screen.findByText(itText.verify.ocrNoticeTrusted)).toBeInTheDocument();
+    expect(screen.queryByText(itText.verify.ocrNotice)).not.toBeInTheDocument();
+  });
+
+  it('shows no warning for a PDF with text', async () => {
+    await renderVerifyPage(await testServices());
+    await screen.findByRole('heading', { name: itText.verify.title });
+    expect(screen.queryByText(itText.verify.ocrNotice)).not.toBeInTheDocument();
+  });
+
+  it('saves the report as read by OCR, with one original file per page', async () => {
+    const services = await testServices();
+    await services.settings.set('keepOriginalFile', true);
+    const { user } = await renderVerifyPage(services, ocrSession());
+    await user.click(await screen.findByRole('button', { name: 'Salva referto' }));
+    await vi.waitFor(async () => expect(await services.reports.listReports()).toHaveLength(1));
+    const [report] = await services.reports.listReports();
+    expect(report).toMatchObject({ source: 'ocr', adapterId: 'proavis', fileHash: 'ocr-hash' });
+    expect(await services.reports.attachmentSummary()).toEqual({ count: 2, bytes: 3 });
+  });
 });

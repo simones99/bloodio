@@ -36,6 +36,11 @@
   font-size: 14px;
 }
 
+.chip:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
 .chip[aria-pressed='true'] {
   background: var(--testo);
   border-color: var(--testo);

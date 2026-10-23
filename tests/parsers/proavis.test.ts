@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { detectProavis, parseProavisRows, proavisDate } from '../../src/parsers/proavis';
-import type { PositionedText } from '../../src/parsers/types';
+import { rowOcrConfidence } from '../../src/ocr/row-confidence';
+import type { PositionedText, TextItem } from '../../src/parsers/types';
 import { loadFixture } from '../fixtures/load';
 
 const row = (rows: ReturnType<typeof parseProavisRows>, name: string, section?: string) =>
@@ -151,5 +152,42 @@ describe('PROAVIS adapter: rows of the 10/07/2021 report', () => {
       'Ab-anti recettore del TSH',
       'Ab-anti Tireoglobulina (Ab-HTG)',
     ]);
+  });
+});
+
+describe('PROAVIS adapter: a reference line continuing below the row', () => {
+  const word = (text: string, x: number, y: number, w: number, confidence = 0.99): TextItem => ({
+    text,
+    x,
+    y,
+    w,
+    h: 10,
+    confidence,
+  });
+  // The row has no reference and no unit: the reference line below, read badly, is attached to
+  // it, and lies right of everything else on the row.
+  const pt: PositionedText = {
+    source: 'ocr',
+    pages: [
+      {
+        width: 600,
+        height: 400,
+        items: [
+          word('Valori di riferimento', 300, 100, 120),
+          word('U.M.', 450, 100, 30),
+          word('Metodica', 520, 100, 50),
+          word('Glicemia', 10, 130, 80),
+          word('87', 200, 130, 20),
+          word('70 - 110', 330, 142, 60, 0.3),
+        ],
+      },
+    ],
+  };
+
+  it('grows the row box to hold the attached line, so its confidence counts', () => {
+    const [glucose] = parseProavisRows(pt);
+    expect(glucose).toMatchObject({ name: 'Glicemia', ref: '70 - 110' });
+    expect(glucose!.bbox).toEqual({ x: 10, y: 120, w: 380, h: 22 });
+    expect(rowOcrConfidence(glucose!.bbox, pt.pages[0])).toBe(0.3);
   });
 });

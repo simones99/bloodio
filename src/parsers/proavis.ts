@@ -1,7 +1,7 @@
 import { buildDraftReport } from './draft';
 import { keepEmptyValueAsRow } from './headings';
 import type { LabAdapter, PositionedPage, PositionedText, RawRow, TextItem } from './types';
-import { allText, center, findItem, itemsNear, joinText, union } from './layout';
+import { allText, center, findItem, grow, isAligned, itemsNear, joinText, union } from './layout';
 
 const REF_HEADER = /^Valori di riferimento$/i;
 const UNIT_HEADER = /^U\.?M\.?$/i;
@@ -110,6 +110,7 @@ function parsePage(
       section,
       page: pageIndex,
       bbox: union(parts),
+      aligned: isAligned(name, value, pick('unit'), pick('ref')),
     });
   }
 
@@ -128,7 +129,7 @@ function parsePage(
       );
     if (owner) {
       owner.ref = owner.ref ? `${owner.ref}\n${o.text.trim()}` : o.text.trim();
-      owner.bbox = { ...owner.bbox, h: o.y - owner.bbox.y };
+      owner.bbox = grow(owner.bbox, o);
     }
   }
   return { rows, section };
@@ -156,5 +157,6 @@ export const proavisAdapter: LabAdapter = {
       sampleDate: proavisDate(pt),
       rawRows: parseProavisRows(pt),
       source: pt.source,
+      pages: pt.pages,
     }),
 };

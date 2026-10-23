@@ -1,6 +1,6 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './test';
 import { buildPdfFromFixture } from '../tests/fixtures/build-pdf';
-import { watchNetwork } from './network';
 
 /** Desktop and emulated phones may share files: force the download path, as the PNG test does. */
 async function forceDownloads(page: Page) {
@@ -12,9 +12,8 @@ async function forceDownloads(page: Page) {
   });
 }
 
-test('export, delete everything, import the file back', async ({ page, baseURL }) => {
+test('export, delete everything, import the file back', async ({ page }) => {
   await forceDownloads(page);
-  const external = watchNetwork(page, baseURL!);
   await page.goto('/');
   await page.getByRole('button', { name: 'Ho capito, inizia' }).click();
   await page.goto('/#/import');
@@ -54,11 +53,9 @@ test('export, delete everything, import the file back', async ({ page, baseURL }
 
   await page.getByRole('link', { name: 'Referti' }).first().click();
   await expect(page.getByRole('link', { name: /20 ago 2022/ })).toContainText('25 valori');
-  expect(external).toEqual([]);
 });
 
-test('the theme picked stays after a reload', async ({ page, baseURL }) => {
-  const external = watchNetwork(page, baseURL!);
+test('the theme picked stays after a reload', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'Ho capito, inizia' }).click();
   await page.getByRole('link', { name: 'Impostazioni' }).click();
@@ -69,5 +66,4 @@ test('the theme picked stays after a reload', async ({ page, baseURL }) => {
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'carta');
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'carta');
-  expect(external).toEqual([]);
 });

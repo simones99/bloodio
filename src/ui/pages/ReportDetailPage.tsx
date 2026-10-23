@@ -24,6 +24,9 @@ import { RangeFlag } from '../components/RangeFlag';
 import { useServices } from '../app/services';
 import { useModalFocus } from '../app/use-modal-focus';
 import { useQuery } from '../app/use-query';
+import { CompareSheet } from '../compare/CompareSheet';
+import { comparePath } from '../compare/compare-view';
+import { previousComparable } from '../compare/previous';
 import { useImportSession } from '../import/import-session';
 import { formatDateLong, formatDisplayNumber, it } from '../i18n/it';
 import shared from '../styles/shared.module.css';
@@ -141,6 +144,7 @@ export function ReportDetailPage() {
   const { reports, customAnalytes, settings } = useServices();
   const { setSession } = useImportSession();
   const [confirming, setConfirming] = useState(false);
+  const [choosing, setChoosing] = useState(false);
 
   const subscribe = useCallback(
     (listener: () => void) => {
@@ -164,6 +168,17 @@ export function ReportDetailPage() {
       [reports, customAnalytes, settings, id],
     ),
     subscribe,
+  );
+  // Only the compare button needs every report: a query of its own keeps the page from waiting.
+  const others = useQuery(
+    useCallback(async () => {
+      const [all, refs] = await Promise.all([
+        reports.listReports(),
+        reports.listEntryRefsByReport(),
+      ]);
+      return { all, refs };
+    }, [reports]),
+    reports.subscribe,
   );
 
   const groups = useMemo(() => {
@@ -193,6 +208,10 @@ export function ReportDetailPage() {
   const justSaved = search.get('saved') === '1';
   const justUpdated = search.get('updated') === '1';
   let railIndex = 0;
+  const compare = others.status === 'ready' && others.data.all.length > 1 ? others.data : null;
+  const previous = compare ? previousComparable(report, compare.all, compare.refs) : null;
+  const openCompare = (otherId: string) =>
+    navigate(comparePath(otherId, report.id), { state: { from: report.id } });
 
   return (
     <>
@@ -230,7 +249,26 @@ export function ReportDetailPage() {
         >
           {it.detail.edit}
         </button>
+        {compare && (
+          <button
+            type="button"
+            className={shared.secondary}
+            onClick={() => (previous ? openCompare(previous.id) : setChoosing(true))}
+          >
+            {previous ? it.detail.compareWithPrevious : it.detail.compareWith}
+          </button>
+        )}
       </div>
+      {choosing && compare && (
+        <CompareSheet
+          fixed={report}
+          reports={compare.all}
+          refs={compare.refs}
+          selected={null}
+          onChoose={openCompare}
+          onClose={() => setChoosing(false)}
+        />
+      )}
 
       {groups.map(([category, lines]) => (
         <section key={category} aria-labelledby={`cat-${category}`}>

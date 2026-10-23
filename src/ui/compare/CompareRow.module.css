@@ -1,0 +1,78 @@
+/* same anatomy as a row of the report detail */
+.row {
+  /* holds the row's visually hidden text: without it the absolute span escapes <main>'s scroll
+     box and lengthens the whole document */
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  column-gap: 12px;
+  row-gap: 6px;
+  padding: 14px var(--gutter);
+  border-top: 1px solid var(--filetto);
+}
+
+.name {
+  font-size: 16px;
+  font-weight: 500;
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--binario);
+  text-underline-offset: 4px;
+}
+
+.value {
+  font-size: 17px;
+  font-weight: 600;
+  text-align: right;
+  font-stretch: var(--dense-stretch);
+  font-variant-numeric: tabular-nums;
+}
+
+.value small {
+  margin-left: 4px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--cenere);
+}
+
+.old {
+  font-weight: 500;
+  color: var(--cenere);
+}
+
+.rail {
+  grid-column: 1 / -1;
+}
+
+.meta {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 18px;
+  font-size: 13px;
+  color: var(--cenere);
+  font-stretch: var(--dense-stretch);
+  font-variant-numeric: tabular-nums;
+}
+
+.notes {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.notes [data-tone='out'] {
+  color: var(--arterioso-testo);
+}
+
+.notes [data-tone='in'] {
+  color: var(--testo);
+}
+
+.delta {
+  margin-left: auto;
+  text-align: right;
+  white-space: nowrap;
+}

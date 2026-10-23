@@ -1,7 +1,7 @@
 import { buildDraftReport } from './draft';
 import { keepEmptyValueAsRow } from './headings';
 import type { LabAdapter, PositionedPage, PositionedText, RawRow, TextItem } from './types';
-import { allText, findItem, itemsNear, joinText, union } from './layout';
+import { allText, findItem, grow, isAligned, itemsNear, joinText, union } from './layout';
 
 const H_NAME = /^Esame$/i;
 const H_VALUE = /^Esito$/i;
@@ -103,6 +103,7 @@ function parsePage(
       section,
       page: pageIndex,
       bbox: union(parts),
+      aligned: isAligned(name, pick('value'), pick('unit'), pick('ref')),
     });
   }
   const orphans = others
@@ -119,7 +120,7 @@ function parsePage(
       );
     if (owner) {
       owner.ref = owner.ref ? `${owner.ref}\n${o.text.trim()}` : o.text.trim();
-      owner.bbox = { ...owner.bbox, h: o.y - owner.bbox.y };
+      owner.bbox = grow(owner.bbox, o);
     }
   }
   return { rows, section };
@@ -167,5 +168,6 @@ export const astAdapter: LabAdapter = {
       sampleDate: astDate(pt),
       rawRows: parseAstRows(pt),
       source: pt.source,
+      pages: pt.pages,
     }),
 };

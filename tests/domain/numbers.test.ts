@@ -43,7 +43,7 @@ describe('isAmbiguousNumber', () => {
   it.each(['7.510', '1.029', '4.220.000'])('%s is ambiguous', (t) => {
     expect(isAmbiguousNumber(t)).toBe(true);
   });
-  it.each(['11,30', '1900', '1.02', '1.0260', '0.005', '0.250'])('%s is not ambiguous', (t) => {
+  it.each(['11,30', '1900', '1.02', '1.0290', '0.005', '0.250'])('%s is not ambiguous', (t) => {
     expect(isAmbiguousNumber(t)).toBe(false);
   });
 });

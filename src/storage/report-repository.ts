@@ -193,6 +193,17 @@ export function createReportRepository(db: BloodioDb): ReportRepository {
     listSeries: seriesOf,
 
     listLatestPerAnalyte: latestPerAnalyte,
+    async listEntryRefsByReport() {
+      const refs = new Map<string, Set<string>>();
+      await db.measurements.each((measurement) => {
+        const ref = analyteRefOf(measurement);
+        if (!ref) return;
+        const keys = refs.get(measurement.reportId) ?? new Set<string>();
+        keys.add(analyteRefToString(ref));
+        refs.set(measurement.reportId, keys);
+      });
+      return refs;
+    },
 
     async latestReferenceFor(ref) {
       const series = await seriesOf(ref);

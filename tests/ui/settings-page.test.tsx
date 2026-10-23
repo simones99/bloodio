@@ -29,6 +29,27 @@ describe('SettingsPage', () => {
     expect(await screen.findByText(/^Versione /)).toBeInTheDocument();
     expect(screen.queryByText(/prossimo aggiornamento/)).not.toBeInTheDocument();
   });
+
+  it('places the app section right after the storage section, before the disclaimer', async () => {
+    const services = await testServices();
+    renderSettings({
+      ...services,
+      storage: {
+        ...services.storage,
+        get: () => Promise.resolve({ persisted: true, usage: 1024 }),
+      },
+    });
+    await screen.findByRole('heading', { name: 'Archivio' });
+    await screen.findByRole('heading', { name: 'Uso come app' });
+    await vi.waitFor(() => {
+      const titles = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent);
+      expect(titles.indexOf('Archivio')).toBeGreaterThanOrEqual(0);
+      expect(titles.indexOf('Uso come app')).toBe(titles.indexOf('Archivio') + 1);
+      expect(titles.indexOf('Uso come app')).toBeLessThan(
+        titles.indexOf('Cosa fa e cosa non fa Bloodio'),
+      );
+    });
+  });
 });
 
 describe('SettingsPage: appearance', () => {
@@ -349,7 +370,10 @@ describe('SettingsPage: import', () => {
     expect(dialog).toHaveTextContent('Dal 10 luglio 2021 al 20 agosto 2022');
     expect(dialog).toHaveTextContent('Laboratori: AST Vallerosa, PROAVIS');
     expect(within(dialog).queryByRole('button', { name: 'Sostituisci' })).toBeNull();
-    expect(within(dialog).getByRole('button', { name: 'Annulla' })).toHaveFocus();
+    // The dialog moves focus in an effect, which may run after findByRole has seen the dialog.
+    await vi.waitFor(() =>
+      expect(within(dialog).getByRole('button', { name: 'Annulla' })).toHaveFocus(),
+    );
 
     await user.click(within(dialog).getByRole('button', { name: 'Importa' }));
     expect(await findToast()).toHaveTextContent(/^Importati 2 referti$/);
