@@ -7,6 +7,7 @@ import {
 } from '../../src/storage/backup/backup-service';
 import { arrayBufferToBase64, base64ToArrayBuffer } from '../../src/storage/backup/base64';
 import { EXPORT_VERSION } from '../../src/storage/backup/schema';
+import { APP_VERSION } from '../../src/version';
 import { createCustomAnalyteStore } from '../../src/storage/custom-analyte-store';
 import { DEFAULT_PROFILE_ID, type BloodioDb } from '../../src/storage/db';
 import { createReportRepository } from '../../src/storage/report-repository';
@@ -78,7 +79,11 @@ describe('exportAll', () => {
   it('writes the versioned envelope and leaves recording the export to the caller', async () => {
     await seed(db);
     const file = await backup.exportAll();
-    expect(file).toMatchObject({ app: 'bloodio', version: EXPORT_VERSION, appVersion: '0.1.0' });
+    expect(file).toMatchObject({
+      app: 'bloodio',
+      version: EXPORT_VERSION,
+      appVersion: APP_VERSION,
+    });
     expect(file.data.reports).toHaveLength(2);
     expect(file.data.measurements).toHaveLength(3);
     expect(file.data.preferredUnits).toEqual({ glucose: 'mmol/L' });
