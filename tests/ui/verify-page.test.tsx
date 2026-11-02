@@ -708,15 +708,26 @@ describe('VerifyPage — save() error handling', () => {
     expect(saveSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('double-clicking Salva referto stores exactly one report', async () => {
+  it('a second tap while the duplicate check runs stores one report', async () => {
+    // Holds the duplicate check open, as on a slow device, until both taps have landed.
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const findDuplicates = services.reports.findDuplicates.bind(services.reports);
+    vi.spyOn(services.reports, 'findDuplicates').mockImplementation(async (query) => {
+      const found = await findDuplicates(query);
+      await gate;
+      return found;
+    });
+    const saveReport = vi.spyOn(services.reports, 'saveReport');
     const { user } = await renderVerifyPage(services);
     const button = await screen.findByRole('button', { name: 'Salva referto' });
     await user.click(button);
     await user.click(button);
+    release();
 
-    await vi.waitFor(async () => {
-      expect(await services.reports.listReports()).toHaveLength(1);
-    });
+    await vi.waitFor(() => expect(saveReport).toHaveBeenCalled());
+    await Promise.allSettled(saveReport.mock.results.map((result) => result.value));
+    expect(await services.reports.listReports()).toHaveLength(1);
   });
 
   it('rolls back every custom analyte created in this attempt when a later create rejects', async () => {
