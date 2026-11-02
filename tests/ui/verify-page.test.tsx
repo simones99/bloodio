@@ -495,13 +495,43 @@ describe('VerifyPage — edit mode', () => {
   });
 });
 
+/**
+ * Resolves in the MutationObserver callback that first finds the element: right after the
+ * commit that adds it, before React's scheduler runs any passive effect.
+ */
+function whenInDocument(find: () => HTMLElement | null) {
+  return new Promise<HTMLElement>((resolve) => {
+    const observer = new MutationObserver(() => {
+      const found = find();
+      if (found) {
+        observer.disconnect();
+        resolve(found);
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  });
+}
+
 describe('VerifyPage — landmark and focus on arrival', () => {
-  it('moves focus to its own main landmark on mount', async () => {
+  it('moves focus to its own main landmark in the same commit that shows it', async () => {
     const services = await testServices();
+    const arrived = whenInDocument(() => screen.queryByRole('main'));
     await renderVerifyPage(services);
-    const main = await screen.findByRole('main');
-    // Focus moves in an effect after main is committed: under load it lands after findByRole.
-    await waitFor(() => expect(main).toHaveFocus());
+    // Checked at once, not in waitFor: until focus moves it sits on the body.
+    expect(await arrived).toHaveFocus();
+  });
+
+  it('keeps every key typed into a row the instant it appears', async () => {
+    const services = await testServices();
+    const arrived = whenInDocument(() =>
+      screen.queryByRole('article', { name: itText.verify.addRow }),
+    );
+    const { user } = await renderVerifyPage(services, { mode: 'manual' }, { delay: null });
+    const row = await arrived;
+
+    await user.type(within(row).getByLabelText('Unità'), 'mg/dL');
+
+    expect(within(row).getByLabelText('Unità')).toHaveValue('mg/dL');
   });
 });
 

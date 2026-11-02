@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router';
 import { getAnalyte } from '../../domain/catalog';
 import type { AnalyteRef, CustomAnalyte, Report, ReportType } from '../../domain/types';
@@ -45,7 +45,9 @@ export function VerifyPage() {
   const main = useRef<HTMLElement>(null);
 
   const custom = useQuery(useCallback(() => customAnalytes.list(), [customAnalytes]));
-  useEffect(() => {
+  // A layout effect, so focus moves in the same commit that shows the page: a passive effect
+  // runs later, and meanwhile focus would sit on the body, or on a field the user already tapped.
+  useLayoutEffect(() => {
     main.current?.focus({ preventScroll: true });
   }, [custom.status]);
 
