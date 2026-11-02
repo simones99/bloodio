@@ -2,13 +2,14 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Measurement, Report } from '../../src/domain/types';
 import { identityGeometry } from '../../src/ingest/page-geometry';
 import { parseReport } from '../../src/parsers/registry';
 import type { PositionedText } from '../../src/parsers/types';
 import type { LatestReference } from '../../src/storage/types';
 import { formatDateLong, it as itText } from '../../src/ui/i18n/it';
+import { Layout } from '../../src/ui/app/Layout';
 import { ServicesProvider, type Services } from '../../src/ui/app/services';
 import { ImportSessionProvider, type ImportSession } from '../../src/ui/import/import-session';
 import { ReportDetailPage } from '../../src/ui/pages/ReportDetailPage';
@@ -516,6 +517,57 @@ describe('VerifyPage — landmark and focus on arrival', () => {
     await user.type(within(row).getByLabelText('Unità'), 'mg/dL');
 
     expect(within(row).getByLabelText('Unità')).toHaveValue('mg/dL');
+  });
+});
+
+// Discarding has the same gap, but jsdom does not show it after a click: see
+// e2e/verify-leaving-focus.spec.ts.
+describe('VerifyPage — focus on leaving after a save', () => {
+  // Layout scrolls its main element on navigation; jsdom does not implement element scrolling.
+  beforeAll(() => {
+    if (typeof Element.prototype.scrollTo !== 'function') Element.prototype.scrollTo = () => {};
+  });
+
+  async function saveAndGetFocusOnLeaving(session: ImportSession, services: Services) {
+    render(
+      <MemoryRouter initialEntries={['/import/verify']}>
+        <ServicesProvider services={services}>
+          <ImportSessionProvider initialSession={session}>
+            <Routes>
+              <Route element={<Layout />}>
+                <Route path="/reports/:id" element={<p>dettaglio referto</p>} />
+              </Route>
+              <Route path="/import/verify" element={<VerifyPage />} />
+            </Routes>
+          </ImportSessionProvider>
+        </ServicesProvider>
+      </MemoryRouter>,
+    );
+    const save = await screen.findByRole('button', { name: 'Salva referto' });
+    // Read in the observer, not after the click: by then focus has had time to move on.
+    const focusOnLeaving = whenInDocument(() =>
+      screen.queryByText(itText.verify.title) ? null : (document.activeElement as HTMLElement),
+    );
+    await userEvent.setup().click(save);
+    return focusOnLeaving;
+  }
+
+  it('moves focus to the next page in the commit that removes it, for a new report', async () => {
+    const focused = await saveAndGetFocusOnLeaving(buildSession(), await testServices());
+    expect(focused.tagName).toBe('MAIN');
+  });
+
+  it('moves focus to the next page in the commit that removes it, for an edit', async () => {
+    const services = await testServices();
+    const id = await services.reports.saveReport(reportInput({ sampleDate: '2022-08-20' }), [
+      measurementInput(),
+    ]);
+    const found = (await services.reports.getReport(id))!;
+    const focused = await saveAndGetFocusOnLeaving(
+      { mode: 'edit', reportId: id, report: found.report, measurements: found.measurements },
+      services,
+    );
+    expect(focused.tagName).toBe('MAIN');
   });
 });
 

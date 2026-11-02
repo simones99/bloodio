@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router';
 import { getAnalyte } from '../../domain/catalog';
 import type { AnalyteRef, CustomAnalyte, Report, ReportType } from '../../domain/types';
@@ -255,7 +263,9 @@ export function VerifyPage() {
           );
           navigate(`/reports/${id}?saved=1`, { replace: true });
         }
-        setSession(null);
+        // React Router navigates in a transition. Clearing the session urgently would paint this
+        // page as null first, with no main element and focus on the body, until the next page came.
+        startTransition(() => setSession(null));
       } catch (error) {
         // Roll back every analyte created in this attempt, even if some fails,
         // then surface the original error rather than a rollback failure.
@@ -427,7 +437,12 @@ export function VerifyPage() {
               <Link to={`/reports/${duplicate.id}`} className={shared.secondary}>
                 {it.importer.openExisting}
               </Link>
-              <button type="button" className={shared.textButton} onClick={() => void save(true)}>
+              <button
+                type="button"
+                className={shared.textButton}
+                disabled={discarding}
+                onClick={() => void save(true)}
+              >
                 {it.verify.saveAnyway}
               </button>
             </div>
@@ -446,7 +461,7 @@ export function VerifyPage() {
               // Same race as save() above: the flag keeps the !session guard from bouncing
               // to /import while this navigation is in flight.
               setDiscarding(true);
-              setSession(null);
+              startTransition(() => setSession(null));
               navigate(discardTo, { replace: true });
             }}
           >
@@ -455,7 +470,9 @@ export function VerifyPage() {
           <button
             type="button"
             className={`${shared.primary} ${styles.save}`}
-            disabled={saving}
+            // Discarding leaves this page mounted until the navigation commits: a second tap
+            // here must not save what was just discarded.
+            disabled={saving || discarding}
             onClick={() => void save()}
           >
             {saving ? it.verify.saving : it.verify.save}
