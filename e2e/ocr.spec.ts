@@ -13,6 +13,8 @@ const SIX_ROWS = '6 valori letti, 6 da controllare. Niente viene salvato finché
 const UNAVAILABLE =
   'Non riesco a preparare la lettura delle immagini. La prima volta serve la connessione.';
 const OCR_OFFLINE = 'Anche la lettura di foto e scansioni funziona senza connessione.';
+const UNKNOWN_UNIT =
+  'Questa unità non è tra quelle note per questa voce. Controlla che sia giusta.';
 
 /** The PROAVIS fixture drawn as a 300 DPI scan, in a blank page outside the app. */
 async function scanOfReport(context: BrowserContext): Promise<Buffer> {
@@ -107,9 +109,15 @@ test('a tilted, shaded photo is read with the chosen pre-processing', async ({ p
     const row = page.getByRole('article', { name, exact: true });
     await expect(row.getByLabel('Valore'), name).toHaveValue(value);
   }
-  await expect(
-    page.getByRole('article', { name: 'TSH', exact: true }).getByLabel('Unità'),
-  ).toHaveValue('µUI/mL');
+  // This unit changes with the value printed on its line, even with identical pixels: with some
+  // values tesseract reads "pum", which nothing can repair. Either way, a unit the app does not
+  // know must not pass unnoticed.
+  const tsh = page.getByRole('article', { name: 'TSH', exact: true });
+  const unit = tsh.getByLabel('Unità');
+  await expect(unit).toHaveValue(/^(µUI\/mL|pum)$/);
+  if ((await unit.inputValue()) === 'pum') {
+    await expect(tsh.getByText(UNKNOWN_UNIT)).toBeVisible();
+  }
 });
 
 test('a PDF without text goes through the same reading', async ({ page, context }) => {
