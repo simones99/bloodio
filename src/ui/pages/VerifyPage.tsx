@@ -89,6 +89,8 @@ export function VerifyPage() {
   const [triedToSave, setTriedToSave] = useState(false);
   const [saving, setSaving] = useState(false);
   const [discarding, setDiscarding] = useState(false);
+  /** From the tap on save, duplicate check included: a save that has started can't be discarded. */
+  const [saveStarted, setSaveStarted] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [duplicate, setDuplicate] = useState<Report | null>(null);
   /** Custom analytes chosen in this draft but not created yet: created only inside save(). */
@@ -186,25 +188,28 @@ export function VerifyPage() {
     setSaveError(null);
     if (savingRef.current) return;
     if (sampleDate === '' || brokenCount > 0 || rows.length === 0 || !session) return;
-    if (!overrideDuplicate) {
-      const candidates = await reports.findDuplicates({
-        sampleDate,
-        lab: lab.trim(),
-        fileHash: session.mode === 'import' ? session.file.fileHash : undefined,
-      });
-      const found = candidates.find(
-        (candidate) => !(session.mode === 'edit' && candidate.id === session.reportId),
-      );
-      if (found) {
-        setDuplicate(found);
-        return;
-      }
-    }
-    setDuplicate(null);
+    // Taken before the duplicate check, which awaits: a second tap meanwhile must not save twice.
     savingRef.current = true;
-    setSaving(true);
+    setSaveStarted(true);
     const createdIds: string[] = [];
     try {
+      if (!overrideDuplicate) {
+        const candidates = await reports.findDuplicates({
+          sampleDate,
+          lab: lab.trim(),
+          fileHash: session.mode === 'import' ? session.file.fileHash : undefined,
+        });
+        const found = candidates.find(
+          (candidate) => !(session.mode === 'edit' && candidate.id === session.reportId),
+        );
+        if (found) {
+          setDuplicate(found);
+          setSaveStarted(false);
+          return;
+        }
+      }
+      setDuplicate(null);
+      setSaving(true);
       const usedPendingIds = new Set(
         rows
           .map((row) => row.customAnalyteId)
@@ -274,6 +279,7 @@ export function VerifyPage() {
       }
     } catch {
       setSaving(false);
+      setSaveStarted(false);
       setSaveError(it.verify.saveFailed);
       return;
     } finally {
@@ -457,6 +463,7 @@ export function VerifyPage() {
           <button
             type="button"
             className={shared.textButton}
+            disabled={saveStarted}
             onClick={() => {
               // Same race as save() above: the flag keeps the !session guard from bouncing
               // to /import while this navigation is in flight.

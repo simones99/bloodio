@@ -130,3 +130,89 @@ test('a second tap on save right after discarding does not save the edit', async
   await expect(page.getByText('90', { exact: true })).toBeVisible();
   await expect(page.getByText('95', { exact: true })).toHaveCount(0);
 });
+
+/**
+ * Taps "Salva referto" then "Annulla" with real clicks on a slowed-down CPU. "Annulla" may be
+ * disabled by then, or gone: that is the point, so a click that cannot land is not a failure.
+ */
+async function tapSaveThenDiscardOnSlowPhone(page: Page) {
+  const cdp = await page.context().newCDPSession(page);
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 20 });
+  await page.getByRole('button', { name: 'Salva referto' }).click({ noWaitAfter: true });
+  await page
+    .getByRole('button', { name: 'Annulla', exact: true })
+    .click({ timeout: 1000, noWaitAfter: true })
+    .catch(() => {});
+  await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+}
+
+test('"Annulla" is disabled from the first moment of a save, duplicate check included', async ({
+  page,
+}) => {
+  await openManualReport(page);
+  await fillManualReport(page);
+
+  const disabled = await page.evaluate(async () => {
+    const button = (name: string) =>
+      [...document.querySelectorAll('button')].find((b) => b.textContent?.trim() === name)!;
+    const save = button('Salva referto');
+    const cancel = button('Annulla');
+    const whileWriting = new Promise<boolean>((resolve) => {
+      const observer = new MutationObserver(() => {
+        if (!save.textContent?.includes('Salvataggio')) return;
+        observer.disconnect();
+        resolve(cancel.disabled);
+      });
+      observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+    });
+    save.click();
+    // React has rendered the click, and save() is still awaiting the duplicate check.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    return { whileChecking: cancel.disabled, whileWriting: await whileWriting };
+  });
+
+  expect(disabled).toEqual({ whileChecking: true, whileWriting: true });
+});
+
+test('a tap on "Annulla" during a slow save does not hide that a new report was saved', async ({
+  page,
+}) => {
+  await openManualReport(page);
+  await fillManualReport(page);
+
+  await tapSaveThenDiscardOnSlowPhone(page);
+
+  await expect(page.getByText('Referto salvato')).toBeVisible();
+});
+
+test('a tap on "Annulla" during a slow save does not hide that an edit was saved', async ({
+  page,
+}) => {
+  await openSavedReportForEditing(page);
+  await page.getByLabel('Valore').fill('95');
+
+  await tapSaveThenDiscardOnSlowPhone(page);
+
+  await expect(page.getByText('Modifiche salvate')).toBeVisible();
+});
+
+test('"Annulla" works again when the duplicate check stops the save', async ({ page }) => {
+  await openManualReport(page);
+  await fillManualReport(page);
+  await page.getByRole('button', { name: 'Salva referto' }).click();
+  await expect(page.getByRole('heading', { name: '1 ottobre 2022' })).toBeVisible();
+  await page.goto('/#/import');
+  await page.getByRole('button', { name: 'Inserisci i valori a mano' }).click();
+  await fillManualReport(page);
+  const save = page.getByRole('button', { name: 'Salva referto' });
+  await save.click();
+  await expect(page.getByRole('button', { name: 'Salva comunque' })).toBeVisible();
+
+  // The check must not take focus away from the button that was tapped.
+  await expect(save).toBeFocused();
+  await page.getByRole('button', { name: 'Annulla', exact: true }).click();
+
+  await expect(page.getByRole('button', { name: 'Inserisci i valori a mano' })).toBeVisible();
+  await page.getByRole('link', { name: 'Referti' }).first().click();
+  await expect(page.getByRole('link', { name: /1 ott 2022/ })).toHaveCount(1);
+});

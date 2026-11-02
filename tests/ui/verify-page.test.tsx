@@ -702,6 +702,7 @@ describe('VerifyPage — save() error handling', () => {
       );
     });
     expect(await screen.findByRole('button', { name: 'Salva referto' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Annulla' })).toBeEnabled();
     expect(await services.reports.listReports()).toEqual([]);
     expect(await services.customAnalytes.list()).toEqual([]);
     expect(saveSpy).toHaveBeenCalledTimes(1);
