@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router';
 import { it } from '../i18n/it';
 import styles from './Layout.module.css';
@@ -8,7 +8,9 @@ export function Layout() {
   const location = useLocation();
   const main = useRef<HTMLElement>(null);
 
-  useEffect(() => {
+  // A layout effect, so focus and scroll move in the same commit that shows the page: a passive
+  // effect runs later, and meanwhile focus would sit on the body and the old scroll would paint.
+  useLayoutEffect(() => {
     main.current?.focus({ preventScroll: true });
     main.current?.scrollTo(0, 0);
   }, [location.pathname]);

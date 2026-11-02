@@ -17,6 +17,7 @@ import { loadFixture, loadOcrFixture } from '../fixtures/load';
 import { measurementInput, reportInput } from '../storage/helpers';
 import { testServices } from './fake-services';
 import './setup-dom';
+import { whenInDocument } from './when-in-document';
 
 const KEPT_ROW_NAMES = [
   'Cristalli',
@@ -494,23 +495,6 @@ describe('VerifyPage — edit mode', () => {
     expect(screen.getByRole('button', { name: /^Tutti/ })).toHaveAttribute('aria-pressed', 'true');
   });
 });
-
-/**
- * Resolves in the MutationObserver callback that first finds the element: right after the
- * commit that adds it, before React's scheduler runs any passive effect.
- */
-function whenInDocument(find: () => HTMLElement | null) {
-  return new Promise<HTMLElement>((resolve) => {
-    const observer = new MutationObserver(() => {
-      const found = find();
-      if (found) {
-        observer.disconnect();
-        resolve(found);
-      }
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-  });
-}
 
 describe('VerifyPage — landmark and focus on arrival', () => {
   it('moves focus to its own main landmark in the same commit that shows it', async () => {
