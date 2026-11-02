@@ -2,13 +2,14 @@
 import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Measurement, Report } from '../../src/domain/types';
 import { identityGeometry } from '../../src/ingest/page-geometry';
 import { parseReport } from '../../src/parsers/registry';
 import type { PositionedText } from '../../src/parsers/types';
 import type { LatestReference } from '../../src/storage/types';
 import { formatDateLong, it as itText } from '../../src/ui/i18n/it';
+import { Layout } from '../../src/ui/app/Layout';
 import { ServicesProvider, type Services } from '../../src/ui/app/services';
 import { ImportSessionProvider, type ImportSession } from '../../src/ui/import/import-session';
 import { ReportDetailPage } from '../../src/ui/pages/ReportDetailPage';
@@ -17,6 +18,7 @@ import { loadFixture, loadOcrFixture } from '../fixtures/load';
 import { measurementInput, reportInput } from '../storage/helpers';
 import { testServices } from './fake-services';
 import './setup-dom';
+import { whenInDocument } from './when-in-document';
 
 const KEPT_ROW_NAMES = [
   'Cristalli',
@@ -45,7 +47,11 @@ function buildSession(): ImportSession {
   };
 }
 
-async function renderVerifyPage(services: Services, session = buildSession()) {
+async function renderVerifyPage(
+  services: Services,
+  session = buildSession(),
+  userOptions?: Parameters<typeof userEvent.setup>[0],
+) {
   render(
     <MemoryRouter>
       <ServicesProvider services={services}>
@@ -55,7 +61,7 @@ async function renderVerifyPage(services: Services, session = buildSession()) {
       </ServicesProvider>
     </MemoryRouter>,
   );
-  return { user: userEvent.setup() };
+  return { user: userEvent.setup(userOptions) };
 }
 
 async function pickCustomAnalyteFor(
@@ -496,12 +502,76 @@ describe('VerifyPage — edit mode', () => {
 });
 
 describe('VerifyPage — landmark and focus on arrival', () => {
-  it('moves focus to its own main landmark on mount', async () => {
+  it('moves focus to its own main landmark in the same commit that shows it', async () => {
     const services = await testServices();
+    const arrived = whenInDocument(() => screen.queryByRole('main'));
     await renderVerifyPage(services);
-    const main = await screen.findByRole('main');
-    // Focus moves in an effect after main is committed: under load it lands after findByRole.
-    await waitFor(() => expect(main).toHaveFocus());
+    // Checked at once, not in waitFor: until focus moves it sits on the body.
+    expect(await arrived).toHaveFocus();
+  });
+
+  it('keeps every key typed into a row the instant it appears', async () => {
+    const services = await testServices();
+    const arrived = whenInDocument(() =>
+      screen.queryByRole('article', { name: itText.verify.addRow }),
+    );
+    const { user } = await renderVerifyPage(services, { mode: 'manual' }, { delay: null });
+    const row = await arrived;
+
+    await user.type(within(row).getByLabelText('Unità'), 'mg/dL');
+
+    expect(within(row).getByLabelText('Unità')).toHaveValue('mg/dL');
+  });
+});
+
+// Discarding has the same gap, but jsdom does not show it after a click: see
+// e2e/verify-leaving-focus.spec.ts.
+describe('VerifyPage — focus on leaving after a save', () => {
+  // Layout scrolls its main element on navigation; jsdom does not implement element scrolling.
+  beforeAll(() => {
+    if (typeof Element.prototype.scrollTo !== 'function') Element.prototype.scrollTo = () => {};
+  });
+
+  async function saveAndGetFocusOnLeaving(session: ImportSession, services: Services) {
+    render(
+      <MemoryRouter initialEntries={['/import/verify']}>
+        <ServicesProvider services={services}>
+          <ImportSessionProvider initialSession={session}>
+            <Routes>
+              <Route element={<Layout />}>
+                <Route path="/reports/:id" element={<p>dettaglio referto</p>} />
+              </Route>
+              <Route path="/import/verify" element={<VerifyPage />} />
+            </Routes>
+          </ImportSessionProvider>
+        </ServicesProvider>
+      </MemoryRouter>,
+    );
+    const save = await screen.findByRole('button', { name: 'Salva referto' });
+    // Read in the observer, not after the click: by then focus has had time to move on.
+    const focusOnLeaving = whenInDocument(() =>
+      screen.queryByText(itText.verify.title) ? null : (document.activeElement as HTMLElement),
+    );
+    await userEvent.setup().click(save);
+    return focusOnLeaving;
+  }
+
+  it('moves focus to the next page in the commit that removes it, for a new report', async () => {
+    const focused = await saveAndGetFocusOnLeaving(buildSession(), await testServices());
+    expect(focused.tagName).toBe('MAIN');
+  });
+
+  it('moves focus to the next page in the commit that removes it, for an edit', async () => {
+    const services = await testServices();
+    const id = await services.reports.saveReport(reportInput({ sampleDate: '2022-08-20' }), [
+      measurementInput(),
+    ]);
+    const found = (await services.reports.getReport(id))!;
+    const focused = await saveAndGetFocusOnLeaving(
+      { mode: 'edit', reportId: id, report: found.report, measurements: found.measurements },
+      services,
+    );
+    expect(focused.tagName).toBe('MAIN');
   });
 });
 
@@ -636,20 +706,32 @@ describe('VerifyPage — save() error handling', () => {
       );
     });
     expect(await screen.findByRole('button', { name: 'Salva referto' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Annulla' })).toBeEnabled();
     expect(await services.reports.listReports()).toEqual([]);
     expect(await services.customAnalytes.list()).toEqual([]);
     expect(saveSpy).toHaveBeenCalledTimes(1);
   });
 
-  it('double-clicking Salva referto stores exactly one report', async () => {
+  it('a second tap while the duplicate check runs stores one report', async () => {
+    // Holds the duplicate check open, as on a slow device, until both taps have landed.
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    const findDuplicates = services.reports.findDuplicates.bind(services.reports);
+    vi.spyOn(services.reports, 'findDuplicates').mockImplementation(async (query) => {
+      const found = await findDuplicates(query);
+      await gate;
+      return found;
+    });
+    const saveReport = vi.spyOn(services.reports, 'saveReport');
     const { user } = await renderVerifyPage(services);
     const button = await screen.findByRole('button', { name: 'Salva referto' });
     await user.click(button);
     await user.click(button);
+    release();
 
-    await vi.waitFor(async () => {
-      expect(await services.reports.listReports()).toHaveLength(1);
-    });
+    await vi.waitFor(() => expect(saveReport).toHaveBeenCalled());
+    await Promise.allSettled(saveReport.mock.results.map((result) => result.value));
+    expect(await services.reports.listReports()).toHaveLength(1);
   });
 
   it('rolls back every custom analyte created in this attempt when a later create rejects', async () => {

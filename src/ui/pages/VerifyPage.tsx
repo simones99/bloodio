@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  startTransition,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router';
 import { getAnalyte } from '../../domain/catalog';
 import type { AnalyteRef, CustomAnalyte, Report, ReportType } from '../../domain/types';
@@ -45,7 +53,9 @@ export function VerifyPage() {
   const main = useRef<HTMLElement>(null);
 
   const custom = useQuery(useCallback(() => customAnalytes.list(), [customAnalytes]));
-  useEffect(() => {
+  // A layout effect, so focus moves in the same commit that shows the page: a passive effect
+  // runs later, and meanwhile focus would sit on the body, or on a field the user already tapped.
+  useLayoutEffect(() => {
     main.current?.focus({ preventScroll: true });
   }, [custom.status]);
 
@@ -79,6 +89,8 @@ export function VerifyPage() {
   const [triedToSave, setTriedToSave] = useState(false);
   const [saving, setSaving] = useState(false);
   const [discarding, setDiscarding] = useState(false);
+  /** From the tap on save, duplicate check included: a save that has started can't be discarded. */
+  const [saveStarted, setSaveStarted] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [duplicate, setDuplicate] = useState<Report | null>(null);
   /** Custom analytes chosen in this draft but not created yet: created only inside save(). */
@@ -176,25 +188,28 @@ export function VerifyPage() {
     setSaveError(null);
     if (savingRef.current) return;
     if (sampleDate === '' || brokenCount > 0 || rows.length === 0 || !session) return;
-    if (!overrideDuplicate) {
-      const candidates = await reports.findDuplicates({
-        sampleDate,
-        lab: lab.trim(),
-        fileHash: session.mode === 'import' ? session.file.fileHash : undefined,
-      });
-      const found = candidates.find(
-        (candidate) => !(session.mode === 'edit' && candidate.id === session.reportId),
-      );
-      if (found) {
-        setDuplicate(found);
-        return;
-      }
-    }
-    setDuplicate(null);
+    // Taken before the duplicate check, which awaits: a second tap meanwhile must not save twice.
     savingRef.current = true;
-    setSaving(true);
+    setSaveStarted(true);
     const createdIds: string[] = [];
     try {
+      if (!overrideDuplicate) {
+        const candidates = await reports.findDuplicates({
+          sampleDate,
+          lab: lab.trim(),
+          fileHash: session.mode === 'import' ? session.file.fileHash : undefined,
+        });
+        const found = candidates.find(
+          (candidate) => !(session.mode === 'edit' && candidate.id === session.reportId),
+        );
+        if (found) {
+          setDuplicate(found);
+          setSaveStarted(false);
+          return;
+        }
+      }
+      setDuplicate(null);
+      setSaving(true);
       const usedPendingIds = new Set(
         rows
           .map((row) => row.customAnalyteId)
@@ -253,7 +268,9 @@ export function VerifyPage() {
           );
           navigate(`/reports/${id}?saved=1`, { replace: true });
         }
-        setSession(null);
+        // React Router navigates in a transition. Clearing the session urgently would paint this
+        // page as null first, with no main element and focus on the body, until the next page came.
+        startTransition(() => setSession(null));
       } catch (error) {
         // Roll back every analyte created in this attempt, even if some fails,
         // then surface the original error rather than a rollback failure.
@@ -262,6 +279,7 @@ export function VerifyPage() {
       }
     } catch {
       setSaving(false);
+      setSaveStarted(false);
       setSaveError(it.verify.saveFailed);
       return;
     } finally {
@@ -425,7 +443,12 @@ export function VerifyPage() {
               <Link to={`/reports/${duplicate.id}`} className={shared.secondary}>
                 {it.importer.openExisting}
               </Link>
-              <button type="button" className={shared.textButton} onClick={() => void save(true)}>
+              <button
+                type="button"
+                className={shared.textButton}
+                disabled={discarding}
+                onClick={() => void save(true)}
+              >
                 {it.verify.saveAnyway}
               </button>
             </div>
@@ -440,11 +463,12 @@ export function VerifyPage() {
           <button
             type="button"
             className={shared.textButton}
+            disabled={saveStarted}
             onClick={() => {
               // Same race as save() above: the flag keeps the !session guard from bouncing
               // to /import while this navigation is in flight.
               setDiscarding(true);
-              setSession(null);
+              startTransition(() => setSession(null));
               navigate(discardTo, { replace: true });
             }}
           >
@@ -453,7 +477,9 @@ export function VerifyPage() {
           <button
             type="button"
             className={`${shared.primary} ${styles.save}`}
-            disabled={saving}
+            // Discarding leaves this page mounted until the navigation commits: a second tap
+            // here must not save what was just discarded.
+            disabled={saving || discarding}
             onClick={() => void save()}
           >
             {saving ? it.verify.saving : it.verify.save}
