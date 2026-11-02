@@ -5,6 +5,8 @@ const PORT = 4173;
 export default defineConfig({
   testDir: 'e2e',
   fullyParallel: true,
+  // A forgotten test.only would leave CI green with a single test run.
+  forbidOnly: !!process.env.CI,
   reporter: [['list']],
   use: {
     baseURL: `http://127.0.0.1:${PORT}`,
