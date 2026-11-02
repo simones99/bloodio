@@ -47,7 +47,11 @@ function buildSession(): ImportSession {
   };
 }
 
-async function renderVerifyPage(services: Services, session = buildSession()) {
+async function renderVerifyPage(
+  services: Services,
+  session = buildSession(),
+  userOptions?: Parameters<typeof userEvent.setup>[0],
+) {
   render(
     <MemoryRouter>
       <ServicesProvider services={services}>
@@ -57,7 +61,7 @@ async function renderVerifyPage(services: Services, session = buildSession()) {
       </ServicesProvider>
     </MemoryRouter>,
   );
-  return { user: userEvent.setup() };
+  return { user: userEvent.setup(userOptions) };
 }
 
 async function pickCustomAnalyteFor(
